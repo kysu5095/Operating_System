@@ -125,6 +125,9 @@
   <ItemGroup>
     <ClInclude Include="hashing_table.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="hashing_table.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
