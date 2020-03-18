@@ -11,10 +11,15 @@ struct Object {
 	int objnum;
 	object* phPrev;
 	object* phNext;
+
+	Object() {
+		objnum = 0;
+		phPrev = phNext = NULL;
+	}
 };
 
 typedef struct __HashTableEnt {
-	int eletCount;
+	int elmtCount;
 	object* pHead;
 	object* pTail;
 }HashTableEnt;
@@ -22,11 +27,12 @@ typedef struct __HashTableEnt {
 HashTableEnt pHashTableEnt[HASH_TBL_SIZE];
 
 object* pFreeListHead = NULL;
-object* ppFreeListTail = NULL;
+object* pFreeListTail = NULL;
 
 void Init();
 void InsertObjectToTail(object* pObj, int ObjNum);
 void InsertObjectToHead(object* pObj, int objNum);
 object* GetObjectByNum(int objnum);
 bool DeleteObject(object* pObj);
+object* GetObjectFromObjFreeList(void);
 void InsertObjectIntoObjFreeList(object* pObj);
