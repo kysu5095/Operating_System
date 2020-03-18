@@ -36,3 +36,8 @@ object* GetObjectByNum(int objnum);
 bool DeleteObject(object* pObj);
 object* GetObjectFromObjFreeList(void);
 void InsertObjectIntoObjFreeList(object* pObj);
+
+////////////////////////
+void print_hash();      
+void print_free_list(); 
+////////////////////////

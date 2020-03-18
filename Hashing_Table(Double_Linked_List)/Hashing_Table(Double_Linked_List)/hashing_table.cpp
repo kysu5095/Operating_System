@@ -88,3 +88,49 @@ void InsertObjectIntoObjFreeList(object* pObj) {
 	pFreeListHead->phNext = pObj;
 }
 
+///////////////////////////////////////////////////////
+void print_hash() {
+	std::cout << "--------------------HASH TABLE--------------------\n";
+	for (int i = 0; i < HASH_TBL_SIZE; i++) {
+		std::cout << i << " : ";
+		object* tmp = pHashTableEnt[i].pHead->phNext;
+		while (tmp != pHashTableEnt[i].pTail) {
+			std::cout << tmp->objnum << " ";
+			tmp = tmp->phNext;
+		}
+		std::cout << '\n';
+	}
+	std::cout << "--------------------------------------------------\n";
+}
+
+void print_free_list() {
+	std::cout << "--------------------FREE LIST---------------------\n";
+	object* tmp = pFreeListHead->phNext;
+	while (tmp != pFreeListTail) {
+		std::cout << tmp << " ";
+		tmp = tmp->phNext;
+	}
+	std::cout << "\n--------------------------------------------------\n";
+}
+
+int main() {
+	std::ios_base::sync_with_stdio(false);
+	std::cout.tie(NULL);
+	std::cin.tie(NULL);
+	Init();
+	object* tmp[5] = { new Object(), new Object() , new Object() , new Object() , new Object() };
+	for (int i = 0; i < 5; i++)
+		InsertObjectIntoObjFreeList(tmp[i]);
+	print_free_list();
+	std::cout << "마지막 주소값 : " << GetObjectFromObjFreeList() << '\n';
+	print_free_list();
+	InsertObjectToTail(GetObjectFromObjFreeList(), 1);
+	InsertObjectToHead(GetObjectFromObjFreeList(), 9);
+	print_hash();
+	std::cout << "9번의 주소값 : " << GetObjectByNum(9) << '\n';
+	InsertObjectIntoObjFreeList(GetObjectByNum(9));
+	// 여기서 hash 출력하면 오류
+	print_free_list();
+	return 0;
+}
+///////////////////////////////////////////////////////
