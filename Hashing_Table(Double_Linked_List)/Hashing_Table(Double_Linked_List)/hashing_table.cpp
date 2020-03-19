@@ -48,7 +48,7 @@ object* GetObjectByNum(int objnum) {
 			return tmp;
 		tmp = tmp->phNext;
 	}
-	delete tmp;
+	//delete tmp;
 	return NULL;
 }
 
@@ -61,6 +61,7 @@ bool DeleteObject(object* pObj) {
 			if (tmp == pObj) {
 				tmp->phPrev->phNext = tmp->phNext;
 				tmp->phNext->phPrev = tmp->phPrev;
+				delete tmp;
 				return true;
 			}
 			tmp = tmp->phNext;
@@ -85,17 +86,19 @@ object* GetObjectFromObjFreeList(void) {
 void InsertObjectIntoObjFreeList(object* pObj) {
 	pFreeListHead->phNext->phPrev = pObj;
 	pObj->phNext = pFreeListHead->phNext;
+	pObj->phPrev = pFreeListHead;
 	pFreeListHead->phNext = pObj;
 }
 
-///////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 void print_hash() {
 	std::cout << "--------------------HASH TABLE--------------------\n";
 	for (int i = 0; i < HASH_TBL_SIZE; i++) {
 		std::cout << i << " : ";
 		object* tmp = pHashTableEnt[i].pHead->phNext;
 		while (tmp != pHashTableEnt[i].pTail) {
-			std::cout << tmp->objnum << " ";
+			std::cout << tmp->objnum << "(" << tmp << ") ";
 			tmp = tmp->phNext;
 		}
 		std::cout << '\n';
@@ -126,11 +129,16 @@ int main() {
 	print_free_list();
 	InsertObjectToTail(GetObjectFromObjFreeList(), 1);
 	InsertObjectToHead(GetObjectFromObjFreeList(), 9);
+	InsertObjectToTail(GetObjectFromObjFreeList(), 17);
 	print_hash();
-	std::cout << "9번의 주소값 : " << GetObjectByNum(9) << '\n';
-	InsertObjectIntoObjFreeList(GetObjectByNum(9));
-	// 여기서 hash 출력하면 오류
 	print_free_list();
+	std::cout << "9번(" << GetObjectByNum(9) << ") Free List에 넣고 삭제\n";
+	InsertObjectIntoObjFreeList(GetObjectByNum(9));
+	DeleteObject(GetObjectByNum(9));
+	print_free_list();
+	//여기서 hash 출력하면 오류
+	print_hash();
 	return 0;
 }
-///////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
