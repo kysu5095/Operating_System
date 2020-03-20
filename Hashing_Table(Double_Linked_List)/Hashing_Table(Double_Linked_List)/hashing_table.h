@@ -1,43 +1,42 @@
-#pragma once
-#define HASH_TBL_SIZE 8
-#define MAX_OBJLIST_NUM 3
-#define OBJ_INVALID -1
-#include <stddef.h>
-#include <iostream>
+#ifndef __HW1_H__
+#define __HW1_H__
 
-typedef struct Object object;
+#include <stdio.h>
 
-struct Object {
-	int objnum;
-	object* phPrev;
-	object* phNext;
+#define HASH_TBL_SIZE    (8)
+#define MAX_OBJLIST_NUM  (3)
+#define OBJ_INVALID  (-1)
 
-	Object() {
-		objnum = 0;
-		phPrev = phNext = NULL;
-	}
+typedef struct Object Object;
+typedef int BOOL;
+
+struct Object
+{
+	int           objnum;
+	Object*       phPrev;
+	Object*       phNext;
 };
 
-typedef struct __HashTableEnt {
+typedef struct __HashTableEnt
+{
 	int elmtCount;
-	object* pHead;
-	object* pTail;
-}HashTableEnt;
+	Object*  pHead;
+	Object*  pTail;
+} HashTableEnt;
 
 HashTableEnt pHashTableEnt[HASH_TBL_SIZE];
 
-object* pFreeListHead = NULL;
-object* pFreeListTail = NULL;
+
+Object*  pFreeListHead;
+Object*  ppFreeListTail;
+
 
 void Init();
-void InsertObjectToTail(object* pObj, int ObjNum);
-void InsertObjectToHead(object* pObj, int objNum);
-object* GetObjectByNum(int objnum);
-bool DeleteObject(object* pObj);
-object* GetObjectFromObjFreeList(void);
-void InsertObjectIntoObjFreeList(object* pObj);
+void InsertObjectToTail(Object* pObj, int ObjNum);
+void InsertObjectToHead(Object* pObj, int objNum);
+Object* GetObjectByNum(int objnum);
+Object* GetObjectFromObjFreeList();
+BOOL DeleteObject(Object* pObj);
+void InsertObjectIntoObjFreeList(Object* pObj);
 
-////////////////////////
-void print_hash();      
-void print_free_list(); 
-////////////////////////
+#endif
