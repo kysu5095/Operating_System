@@ -4,14 +4,17 @@
 void Init() {
 	for (int i = 0; i < HASH_TBL_SIZE; i++) {
 		pHashTableEnt[i].elmtCount = 0;
-		pHashTableEnt[i].pHead = new Object();
-		pHashTableEnt[i].pTail = new Object();
+		pHashTableEnt[i].pHead = (Object*)malloc(sizeof(Object));
+		pHashTableEnt[i].pTail = (Object*)malloc(sizeof(Object));
 		pHashTableEnt[i].pHead->phNext = pHashTableEnt[i].pTail;
+		pHashTableEnt[i].pHead->phPrev = NULL;
 		pHashTableEnt[i].pTail->phPrev = pHashTableEnt[i].pHead;
+		pHashTableEnt[i].pTail->phNext = NULL;
 	}
-	pFreeListHead = new Object();
-	ppFreeListTail = new Object();
+	pFreeListHead = (Object*)malloc(sizeof(Object));
+	ppFreeListTail = (Object*)malloc(sizeof(Object));
 	pFreeListHead->phNext = ppFreeListTail;
+	pFreeListHead->phPrev = NULL;
 	ppFreeListTail->phNext = pFreeListHead;
 	ppFreeListTail->phPrev = pFreeListHead;
 }
@@ -41,7 +44,7 @@ void InsertObjectToHead(Object* pObj, int objNum) {
 // Returns pointer of the found object
 Object* GetObjectByNum(int objnum) {
 	int table_num = objnum % HASH_TBL_SIZE;
-	Object *tmp = new Object();
+	Object *tmp = (Object*)malloc(sizeof(Object));
 	tmp = pHashTableEnt[table_num].pHead->phNext;
 	while (tmp->phNext != NULL) {
 		if (tmp->objnum == objnum)
@@ -54,26 +57,26 @@ Object* GetObjectByNum(int objnum) {
 
 // Delete object from hash table
 BOOL DeleteObject(Object* pObj) {
-	Object *tmp = new Object();
+	Object *tmp = (Object*)malloc(sizeof(Object));
 	for (int i = 0; i < HASH_TBL_SIZE; i++) {
 		tmp = pHashTableEnt[i].pHead->phNext;
 		while (tmp->phNext != NULL) {
 			if (tmp == pObj) {
 				tmp->phPrev->phNext = tmp->phNext;
 				tmp->phNext->phPrev = tmp->phPrev;
-				delete tmp;
-				return true;
+				//delete tmp;
+				return 1;
 			}
 			tmp = tmp->phNext;
 		}
 	}
 	//delete tmp;
-	return false;
+	return 0;
 }
 
 // Get new object from free list
 Object* GetObjectFromObjFreeList(void) {
-	if (ppFreeListTail->phPrev == pFreeListHead) 
+	if (ppFreeListTail->phPrev == pFreeListHead)
 		return NULL;
 
 	Object* tmp = ppFreeListTail->phPrev;
@@ -117,11 +120,49 @@ void print_free_list() {
 }
 
 int main() {
+	Object* pObject;
 	Init();
-	Object* tmp[5] = { new Object(), new Object() , new Object() , new Object() , new Object() };
-	for (int i = 0; i < 5; i++)
-		InsertObjectIntoObjFreeList(tmp[i]);
+	for (int i = 0; i < 10; i++) {
+		pObject = (Object*)malloc(sizeof(Object));
+		pObject->objnum = 1;
+		InsertObjectIntoObjFreeList(pObject);
+	}
 	print_free_list();
+
+	pObject = GetObjectFromObjFreeList();
+	pObject->objnum = 10;
+	InsertObjectToTail(pObject, 10);
+
+	pObject = GetObjectFromObjFreeList();
+	pObject->objnum = 1;
+	InsertObjectToTail(pObject, 1);
+
+	pObject = GetObjectFromObjFreeList();
+	pObject->objnum = 2;
+	InsertObjectToTail(pObject, 2);
+
+	pObject = GetObjectFromObjFreeList();
+	pObject->objnum = 5;
+	InsertObjectToTail(pObject, 5);
+
+	pObject = GetObjectFromObjFreeList();
+	pObject->objnum = 18;
+	InsertObjectToHead(pObject, 18);
+
+	print_free_list();
+	printf("\n");
+	print_hash();
+
+	pObject = GetObjectByNum(5);
+	DeleteObject(pObject);
+	pObject->objnum = 1;
+	InsertObjectIntoObjFreeList(pObject);
+
+	print_free_list();
+	printf("\n");
+	print_hash();
+
+	/*print_free_list();
 	printf("마지막 주소값 : %p\n", GetObjectFromObjFreeList());
 	print_free_list();
 	InsertObjectToTail(GetObjectFromObjFreeList(), 1);
@@ -132,7 +173,7 @@ int main() {
 	printf("9번(%p) Free List에 넣고 삭제\n", GetObjectByNum(9));
 	InsertObjectIntoObjFreeList(GetObjectByNum(9));
 	DeleteObject(GetObjectByNum(9));
-	print_free_list();
+	print_free_list();*/
 	//여기서 hash 출력하면 오류
 	//print_hash();
 	return 0;

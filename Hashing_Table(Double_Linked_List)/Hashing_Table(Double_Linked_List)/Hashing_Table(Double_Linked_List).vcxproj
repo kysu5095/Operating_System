@@ -126,7 +126,10 @@
     <ClInclude Include="hashing_table.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="hashing_table.cpp" />
+    <ClCompile Include="hashing_table.c" />
+    <ClCompile Include="hashing_table.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
