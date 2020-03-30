@@ -2,7 +2,6 @@
 #define __HW1_H__
 
 #include <stdio.h>
-#include <stdlib.h>
 
 #define HASH_TBL_SIZE    (8)
 #define MAX_OBJLIST_NUM  (3)
