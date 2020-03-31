@@ -206,8 +206,8 @@ void printHashTable() {
 
 void DeleteProcess(int idx) {
 	Object* temp = GetObjectByNum(idx);
-	temp->objnum = OBJ_INVALID;
 	DeleteObject(temp);
+	temp->objnum = OBJ_INVALID;
 	InsertObjectIntoObjFreeList(temp);
 }
 
