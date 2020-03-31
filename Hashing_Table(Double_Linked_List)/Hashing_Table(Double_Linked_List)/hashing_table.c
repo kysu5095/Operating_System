@@ -113,59 +113,58 @@ Object* GetObjectByNum(int objnum) {
 
 // Delete object from hash table
 BOOL DeleteObject(Object* pObj) {
+	int table_num = pObj->objnum % HASH_TBL_SIZE;
 	Object *tmp = (Object*)malloc(sizeof(Object));
-	for (int i = 0; i < HASH_TBL_SIZE; i++) {
-		tmp = pHashTableEnt[i].pHead;
-		while (tmp != NULL) {
-			if (tmp == pObj) {
-				// When delete head
-				if (tmp == pHashTableEnt[i].pHead) {
-					// When hash table size is 1
-					if (tmp->phNext == NULL) {
-						pHashTableEnt[i].pHead = NULL;
-						pHashTableEnt[i].pTail = NULL;
+	tmp = pHashTableEnt[table_num].pHead;
+	while (tmp != NULL) {
+		if (tmp == pObj) {
+			// When delete head
+			if (tmp == pHashTableEnt[table_num].pHead) {
+				// When hash table size is 1
+				if (tmp->phNext == NULL) {
+					pHashTableEnt[table_num].pHead = NULL;
+					pHashTableEnt[table_num].pTail = NULL;
+				}
+				else {
+					// When hash table size is 2
+					if (tmp->phNext == pHashTableEnt[table_num].pTail) {
+						pHashTableEnt[table_num].pHead = pHashTableEnt[table_num].pTail;
+						pHashTableEnt[table_num].pHead->phNext = NULL;
+						pHashTableEnt[table_num].pHead->phPrev = NULL;
+						pHashTableEnt[table_num].pTail = NULL;
 					}
 					else {
-						// When hash table size is 2
-						if (tmp->phNext == pHashTableEnt[i].pTail) {
-							pHashTableEnt[i].pHead = pHashTableEnt[i].pTail;
-							pHashTableEnt[i].pHead->phNext = NULL;
-							pHashTableEnt[i].pHead->phPrev = NULL;
-							pHashTableEnt[i].pTail = NULL;
-						}
-						else {
-							pHashTableEnt[i].pHead = pHashTableEnt[i].pHead->phNext;
-							pHashTableEnt[i].pHead->phPrev = NULL;
-						}
+						pHashTableEnt[table_num].pHead = pHashTableEnt[table_num].pHead->phNext;
+						pHashTableEnt[table_num].pHead->phPrev = NULL;
+					}
+				}
+			}
+			else {
+				// When delete tail
+				if (tmp == pHashTableEnt[table_num].pTail) {
+					// When hash table size is 2
+					if (tmp->phPrev == pHashTableEnt[table_num].pHead) {
+						pHashTableEnt[table_num].pHead->phNext = NULL;
+						pHashTableEnt[table_num].pTail = NULL;
+					}
+					else {
+						pHashTableEnt[table_num].pTail = pHashTableEnt[table_num].pTail->phPrev;
+						pHashTableEnt[table_num].pTail->phNext = NULL;
 					}
 				}
 				else {
-					// When delete tail
-					if (tmp == pHashTableEnt[i].pTail) {
-						// When hash table size is 2
-						if (tmp->phPrev == pHashTableEnt[i].pHead) {
-							pHashTableEnt[i].pHead->phNext = NULL;
-							pHashTableEnt[i].pTail = NULL;
-						}
-						else {
-							pHashTableEnt[i].pTail = pHashTableEnt[i].pTail->phPrev;
-							pHashTableEnt[i].pTail->phNext = NULL;
-						}
-					}
-					else {
-						tmp->phPrev->phNext = tmp->phNext;
-						tmp->phNext->phPrev = tmp->phPrev;
-					}
+					tmp->phPrev->phNext = tmp->phNext;
+					tmp->phNext->phPrev = tmp->phPrev;
 				}
-				pHashTableEnt[i].elmtCount--;
-				pObj = (Object *)malloc(sizeof(Object));
-				pObj->objnum = OBJ_INVALID;
-				//delete tmp;
-				return 1;
 			}
-			if (tmp->phNext == NULL) break;
-			tmp = tmp->phNext;
+			pHashTableEnt[table_num].elmtCount--;
+			pObj = (Object *)malloc(sizeof(Object));
+			pObj->objnum = OBJ_INVALID;
+			//delete tmp;
+			return 1;
 		}
+		if (tmp->phNext == NULL) break;
+		tmp = tmp->phNext;
 	}
 	//delete tmp;
 	return 0;
@@ -251,7 +250,6 @@ void main() {
 	for (i = 0; i < INSERT_OBJECT_SIZE; i++) {
 		InsertObjectToTail(GetObjectFromObjFreeList(), i);
 	}
-
 	for (i = 8; i < 16; i++) {
 		DeleteProcess(i);
 		InsertObjectToHead(GetObjectFromObjFreeList(), i);
