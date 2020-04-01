@@ -4,18 +4,6 @@
 
 #define INSERT_OBJECT_SIZE (48)
 
-void InitFreeList() {
-
-	int i;
-	Object* pObject;
-
-	for (i = 0; i < INSERT_OBJECT_SIZE; i++) {
-		pObject = (Object*)malloc(sizeof(Object));
-		pObject->objnum = OBJ_INVALID;
-		InsertObjectIntoObjFreeList(pObject);
-	}
-}
-
 // Initial Hash Table
 void Init() {
 	for (int i = 0; i < HASH_TBL_SIZE; i++) {
@@ -187,25 +175,4 @@ void InsertObjectIntoObjFreeList(Object* pObj) {
 	pObj->phNext = pFreeListHead->phNext;
 	pObj->phPrev = pFreeListHead;
 	pFreeListHead->phNext = pObj;
-}
-
-void printHashTable() {
-	int i, j;
-	printf("-----------HashTable-----------\n");
-	for (i = 0; i < HASH_TBL_SIZE; i++) {
-		printf("index: %d |", i);
-		Object* temp = pHashTableEnt[i].pHead;
-		for (j = 0; j < pHashTableEnt[i].elmtCount; j++) {
-			printf(" %d", temp->objnum);
-			temp = temp->phNext;
-		}
-		printf("\n");
-	}
-}
-
-void DeleteProcess(int idx) {
-	Object* temp = GetObjectByNum(idx);
-	DeleteObject(temp);
-	temp->objnum = OBJ_INVALID;
-	InsertObjectIntoObjFreeList(temp);
 }
