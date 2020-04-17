@@ -45,9 +45,72 @@ void InsertThreadToTail(Thread* pThread, int priority) {
 	pReadyQueueEnt[priority].queueCount++;
 }
 
+/* delete thread from ready queue */
+BOOL DeleteThreadFromReady(Thread* pThread) {
+	int priority = pThread->priority;
+	Thread *tmp = (Thread*)malloc(sizeof(Thread));
+	tmp = pReadyQueueEnt[priority].pHead;
+	while (tmp != NULL) {
+		if (tmp == pThread) {
+			// When delete head
+			if (tmp == pReadyQueueEnt[priority].pHead) {
+				// When hash table size is 1
+				if (tmp->phNext == NULL) {
+					pReadyQueueEnt[priority].pHead = NULL;
+					pReadyQueueEnt[priority].pTail = NULL;
+				}
+				else {
+					// When hash table size is 2
+					if (tmp->phNext == pReadyQueueEnt[priority].pTail) {
+						pReadyQueueEnt[priority].pHead = pReadyQueueEnt[priority].pTail;
+						pReadyQueueEnt[priority].pHead->phNext = NULL;
+						pReadyQueueEnt[priority].pHead->phPrev = NULL;
+						pReadyQueueEnt[priority].pTail = NULL;
+					}
+					else {
+						pReadyQueueEnt[priority].pHead = pReadyQueueEnt[priority].pHead->phNext;
+						pReadyQueueEnt[priority].pHead->phPrev = NULL;
+					}
+				}
+			}
+			else {
+				// When delete tail
+				if (tmp == pReadyQueueEnt[priority].pTail) {
+					// When hash table size is 2
+					if (tmp->phPrev == pReadyQueueEnt[priority].pHead) {
+						pReadyQueueEnt[priority].pHead->phNext = NULL;
+						pReadyQueueEnt[priority].pTail = NULL;
+					}
+					else {
+						pReadyQueueEnt[priority].pTail = pReadyQueueEnt[priority].pTail->phPrev;
+						pReadyQueueEnt[priority].pTail->phNext = NULL;
+					}
+				}
+				else {
+					tmp->phPrev->phNext = tmp->phNext;
+					tmp->phNext->phPrev = tmp->phPrev;
+				}
+			}
+			pReadyQueueEnt[priority].queueCount--;
+			return 1;
+		}
+		if (tmp->phNext == NULL) break;
+		tmp = tmp->phNext;
+	}
+	return 0;
+}
+
+/* insert thread to tail of waiting queue */
+void InsertThreadIntoWaiting(Thread* pThread) {
+	pWaitingQueueTail->phPrev->phNext = pThread;
+	pThread->phPrev = pWaitingQueueTail->phPrev;
+	pThread->phNext = pWaitingQueueTail;
+	pWaitingQueueTail->phPrev = pThread;
+}
+
 /* get thread id from thread table */
-int get_thread_id(Thread* pThread) {
-	for (int id = 0; id < MAX_THREAD_NUM; id++) {
+thread_t get_thread_id(Thread* pThread) {
+	for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
 		if (!pThreadTbEnt[id].bUsed) {
 			pThreadTbEnt[id].bUsed = 1;
 			pThreadTbEnt[id].pThread = pThread;
@@ -98,10 +161,20 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	return 1;
 }
 
+/* suspend thread */
+/* note : don't suspend oneself!!!! */
 int thread_suspend(thread_t tid){
-
+	/* no such thread */
+	if (!pThreadTbEnt[tid].bUsed) return -1;
+	/* thread status is not ready */
+	if (pThreadTbEnt[tid].pThread->status != THREAD_STATUS_READY) return -1;
+	DeleteThreadFromReady(pThreadTbEnt[tid].pThread);
+	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_WAIT;
+	InsertThreadIntoWaiting(pThreadTbEnt[tid].pThread);
+	return 0;
 }
-
+ 
+/* resume thread */
 int thread_cancel(thread_t tid){
 
 }
@@ -110,8 +183,15 @@ int thread_resume(thread_t tid){
 
 }
 
+/* get thread id from thread table */
 thread_t thread_self(){
-
+	pid_t pid = getpid();
+	for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
+		if (!pThreadTbEnt[id].bUsed) continue;
+		if (pThreadTbEnt[id].pThread->pid == pid)
+			return id;
+	}
+	return -1;
 }
 
 /*
