@@ -100,12 +100,30 @@ BOOL DeleteThreadFromReady(Thread* pThread) {
 	return 0;
 }
 
-/* insert thread to tail of waiting queue */
+/* insert thread to **tail** of waiting queue */
 void InsertThreadIntoWaiting(Thread* pThread) {
 	pWaitingQueueTail->phPrev->phNext = pThread;
 	pThread->phPrev = pWaitingQueueTail->phPrev;
 	pThread->phNext = pWaitingQueueTail;
 	pWaitingQueueTail->phPrev = pThread;
+}
+
+/* delete thread form waiting queue */
+BOOL DeleteThreadFromWating(Thread* pThread) {
+	if (pWaitingQueueTail->phPrev == pWaitingQueueHead) 
+		return 0;
+
+	Thread* tmp = pWaitingQueueHead->phNext;
+	while (1) {
+		if (tmp == pThread) {
+			tmp->phPrev->phNext = tmp->phNext;
+			tmp->phNext->phPrev = tmp->phPrev;
+			return 1;
+		}
+		if (tmp->phNext == pWaitingQueueTail) break;
+		tmp = tmp->phNext;
+	}
+	return 0;
 }
 
 /* get thread id from thread table */
@@ -174,13 +192,25 @@ int thread_suspend(thread_t tid){
 	return 0;
 }
  
-/* resume thread */
+/* kill thread */
+/* note : don't kill oneself!!!! */
 int thread_cancel(thread_t tid){
-
+	pid_t pid = pThreadTbEnt[tid].pThread->pid;
+	kill(pid, SIGKILL);
+	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_READY)
+		DeleteThreadFromReady(pThreadTbEnt[tid].pThread);
+	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_WAIT)
+		DeleteThreadFromWating(pThreadTbEnt[tid].pThread);
+	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
+	
+	free(pThreadTbEnt[tid].pThread);
+	pThreadTbEnt[tid].bUsed = 0;
+	pThreadTbEnt[tid].pThread = NULL;
 }
 
+/* resume thread */
 int thread_resume(thread_t tid){
-
+	
 }
 
 /* get thread id from thread table */
