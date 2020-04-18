@@ -4,10 +4,13 @@
 #include <stdio.h>
 
 void printq() {
+	printf("\n");
+	printf("\n");
+	printf("\n");
 	printf("===============THREAD QUEUE=================\n");
 	for (int i = 0; i < 5; i++) {
 		if (!pThreadTbEnt[i].bUsed)continue;
-		printf("%d : %d\n", i, pThreadTbEnt[i].pThread->pid);
+		printf("%d | pid : %d   priority : %d\n", i, pThreadTbEnt[i].pThread->pid, pThreadTbEnt[i].pThread->priority);
 	}
 	printf("===============READY QUEUE=================\n");
 	for (int i = 0; i < MAX_READYQUEUE_NUM; i++) {
@@ -19,8 +22,6 @@ void printq() {
 		}
 		printf("\n");
 	}
-	printf("\n");
-	printf("\n");
 	printf("===============CPU QUEUE=================\n");
 	printf("%d\n", pCurrentThead->pid);
 }
@@ -113,8 +114,8 @@ thread_t get_threadID(Thread* pThread) {
 
 int RunScheduler(void) {
 	printq();
-
-	if (pCurrentThead != NULL) {
+	signal(SIGALRM, RunScheduler);
+	/*if (pCurrentThead != NULL) {
 		if (!is_empty()) {
 			InsertThreadToReady(pCurrentThead);
 			Thread* nThread = (Thread*)malloc(sizeof(Thread));
@@ -129,7 +130,20 @@ int RunScheduler(void) {
 		pCurrentThead = GetThreadFromReady();
 		pCurrentThead->status = THREAD_STATUS_RUN;
 		kill(pCurrentThead->pid, SIGCONT);
+	}*/
+	if (is_empty()) {
+		kill(pCurrentThead->pid, SIGCONT);
 	}
+	else {
+		InsertThreadToReady(pCurrentThead);
+		Thread* nThread = (Thread*)malloc(sizeof(Thread));
+		nThread = GetThreadFromReady();
+		thread_t tid1, tid2;
+		tid1 = get_threadID(pCurrentThead);
+		tid2 = get_threadID(nThread);
+		__ContextSwitch(tid1, tid2);
+	}
+
 	alarm(TIMESLICE);
 }
 
