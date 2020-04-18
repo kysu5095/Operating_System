@@ -183,6 +183,8 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 		//  scheduling 작업 추가  //
 		///////////////////////////
 		///////////////////////////
+		kill(pid, SIGCONT);
+		pCurrentThead = pThread;
 	}
 	/* insert ready queue */
 	else {

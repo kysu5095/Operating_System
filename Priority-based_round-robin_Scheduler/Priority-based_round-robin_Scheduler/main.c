@@ -23,9 +23,9 @@ void* AppTask(void* param) {
 	thread_t tid1, tid2, tid3;
 	int arg = 100;
 	printf("AppTask\n");
-	thread_create(&tid1, NULL, 0, foo1, &arg);
-	thread_create(&tid2, NULL, 1, foo2, &arg);
-	thread_create(&tid3, NULL, 2, foo3, &arg);
+	thread_create(&tid1, NULL, 1, foo1, &arg);
+	thread_create(&tid2, NULL, 2, foo2, &arg);
+	thread_create(&tid3, NULL, 3, foo3, &arg);
 }
 
 int main(void)
@@ -35,7 +35,7 @@ int main(void)
 	printf("start\n");
 	Init();
 	printf("init\n");
-	thread_create(&tid, NULL, 4, AppTask, &arg);
+	thread_create(&tid, NULL, 0, AppTask, &arg);
 	printf("create\n");
 }
 
