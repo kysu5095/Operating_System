@@ -218,7 +218,7 @@ int thread_cancel(thread_t tid){
 	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_READY)
 		DeleteThreadFromReady(pThreadTbEnt[tid].pThread);
 	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_WAIT)
-		DeleteThreadFromWating(pThreadTbEnt[tid].pThread);
+		DeleteThreadFromWaiting(pThreadTbEnt[tid].pThread);
 	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
 	
 	free(pThreadTbEnt[tid].pThread);

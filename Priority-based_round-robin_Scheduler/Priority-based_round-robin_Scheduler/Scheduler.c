@@ -1,9 +1,10 @@
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
+#include <stdlib.h>
 
 /* insert thread to **Tail** of ready queue */
-void InsertThreadToTail(Thread* pThread) {
+void InsertThreadToReady(Thread* pThread) {
 	int priority = pThread->priority;
 	// when ready queue empty
 	if (pReadyQueueEnt[priority].pHead == NULL) {
@@ -39,7 +40,7 @@ void InsertThreadToTail(Thread* pThread) {
 }
 
 /* delete thread from ready queue */
-Thread* DeleteThreadFromReady() {
+Thread* GetThreadFromReady() {
 	Thread* pThread = (Thread*)malloc(sizeof(Thread));
 	for (thread_t idx = 0; idx < MAX_READYQUEUE_NUM; idx++) {
 		if (!pReadyQueueEnt[idx].queueCount) continue;
@@ -90,9 +91,9 @@ thread_t get_threadID(Thread* pThread) {
 
 int RunScheduler( void ){
 	if (is_empty()) {
-		InsertThreadToTail(pCurrentThead);
+		InsertThreadToReady(pCurrentThead);
 		Thread* nThread = (Thread*)malloc(sizeof(Thread));
-		nThread = DeleteThreadFromReady();
+		nThread = GetThreadFromReady();
 		thread_t tid1, tid2;
 		tid1 = get_threadID(pCurrentThead);
 		tid2 = get_threadID(nThread);
@@ -111,12 +112,12 @@ void __ContextSwitch(int curpid, int newpid){
 
 	/* stop current thread */
 	pThread = pThreadTbEnt[curpid].pThread;
-	kill(pThread.pid, SIGSTOP);
+	kill(pThread->pid, SIGSTOP);
 	pThread->status = THREAD_STATUS_READY;
 	
 	/* start new thread */
 	pThread = pThreadTbEnt[newpid].pThread;
-	kill(pThread.pid, SIGCONT);
+	kill(pThread->pid, SIGCONT);
 	pThread->status = THREAD_STATUS_RUN;
 
 	/* change cpu thread */

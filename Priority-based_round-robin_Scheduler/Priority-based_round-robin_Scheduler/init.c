@@ -1,8 +1,9 @@
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
+#include <stdlib.h>
 
-void init(void) {
+void Init(void) {
 	/* running thread init */
 	pCurrentThead = NULL;
 
