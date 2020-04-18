@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #define TIMESLICE		(2)
 #define MAX_READYQUEUE_NUM	(8)	/* Ready queue의 개수 */

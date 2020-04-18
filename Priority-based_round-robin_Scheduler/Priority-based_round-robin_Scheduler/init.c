@@ -1,7 +1,6 @@
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
-#include <stdlib.h>
 
 void Init(void) {
 	/* running thread init */

@@ -174,20 +174,33 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	pThread->pid       = pid;
 	pThread->priority  = priority;
 	*thread            = get_thread_id(pThread);
+	printf("PID : %d   TID : %d\n", pid, *thread);
 
-	/* context switching */
-	if (pCurrentThead == NULL || priority < pCurrentThead->priority) {
-		pThread->status = THREAD_STATUS_RUN;
-		///////////////////////////
-		///////////////////////////
-		//  scheduling 작업 추가  //
-		///////////////////////////
-		///////////////////////////
-		kill(pid, SIGCONT);
+	if (pCurrentThead == NULL) {
+		printf("on cpu\n");
+		//InsertThreadToTail(pThread, priority);
 		pCurrentThead = pThread;
+		pThread->status = THREAD_STATUS_RUN;
+		kill(pCurrentThead->pid, SIGCONT);
+	}
+	/* context switching */
+	else if (priority < pCurrentThead->priority) {
+		printf("priority : %d    cur priority %d\n", priority, pCurrentThead->priority);
+		//InsertThreadToTail(pThread, priority);
+		thread_t tid;
+		for (pthread_t id = 0; id < MAX_THREAD_NUM; id++) {
+			if (pThreadTbEnt[id].pThread == pCurrentThead) {
+				tid = id;
+				printf("find tid : %d", tid);
+				break;
+			}
+		}
+		printf("    cur tid : %d\n", *thread);
+		__ContextSwitch(tid, *thread);
 	}
 	/* insert ready queue */
 	else {
+		printf("insert ready queue\n");
 		pThread->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pThread, priority);
 	}
