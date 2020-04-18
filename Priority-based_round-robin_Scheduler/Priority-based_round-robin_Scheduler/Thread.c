@@ -1,14 +1,27 @@
-
+#define _GNU_SOURCE
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
 #include <stdio.h>
 #include <stdlib.h>
 #define STACK_SIZE    1024*64
-#define CLONE_FS      0x00000200
-#define CLONE_FILES   0x00000400
-#define CLONE_SIGHAND 0x00000800
-#define CLONE_VM      0x00000100
+//#define CLONE_FS      0x00000200
+//#define CLONE_FILES   0x00000400
+//#define CLONE_SIGHAND 0x00000800
+//#define CLONE_VM      0x00000100
+
+/*
+ InsertThreadToTail      : ready queue의 우선순위에 맞는 테이블에 thread를 'tail'로 넣음    
+ DeleteThreadFromReady   : ready queue에서 해당하는 thread 삭제                           
+ InsertThreadIntoWaiting : waiting queue에 thread를 'tail'로 넣음                         
+ DeleteThreadFromWaiting : waiting queue에 해당하는 thread 삭제                           
+ get_thread_id           : thread table에서 thread의 index를 반환                         
+ thread_create           : thread 생성 후 ready queue로 삽입 or context scheduling        
+ thread_suspend          : 해당하는 thread 정지 >> waiting queue로 보냄                    
+ thread_cancel           : 해당하는 thread 죽임 >> 메모리 해제 후 thread table에서도 삭제  
+ thread_rsume            : 해당하는 thread 다시 시작 >> ready queue or context scheduling  
+ thread_self             : 이 함수를 호출한 thread의 tid를 반환                            
+*/
 
 /* insert thread to **Tail** of ready queue */
 void InsertThreadToTail(Thread* pThread, int priority) {
@@ -109,7 +122,7 @@ void InsertThreadIntoWaiting(Thread* pThread) {
 }
 
 /* delete thread form waiting queue */
-BOOL DeleteThreadFromWating(Thread* pThread) {
+BOOL DeleteThreadFromWaiting(Thread* pThread) {
 	if (pWaitingQueueTail->phPrev == pWaitingQueueHead) 
 		return 0;
 
@@ -186,16 +199,20 @@ int thread_suspend(thread_t tid){
 	if (!pThreadTbEnt[tid].bUsed) return -1;
 	/* thread status is not ready */
 	if (pThreadTbEnt[tid].pThread->status != THREAD_STATUS_READY) return -1;
-	DeleteThreadFromReady(pThreadTbEnt[tid].pThread);
-	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_WAIT;
-	InsertThreadIntoWaiting(pThreadTbEnt[tid].pThread);
-	return 0;
+	if (DeleteThreadFromReady(pThreadTbEnt[tid].pThread)) {
+		pThreadTbEnt[tid].pThread->status = THREAD_STATUS_WAIT;
+		InsertThreadIntoWaiting(pThreadTbEnt[tid].pThread);
+		return 0;
+	}
+	else
+		return -1;
 }
  
 /* kill thread */
 /* note : don't kill oneself!!!! */
 int thread_cancel(thread_t tid){
 	pid_t pid = pThreadTbEnt[tid].pThread->pid;
+	/* kill thread */
 	kill(pid, SIGKILL);
 	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_READY)
 		DeleteThreadFromReady(pThreadTbEnt[tid].pThread);
@@ -206,6 +223,8 @@ int thread_cancel(thread_t tid){
 	free(pThreadTbEnt[tid].pThread);
 	pThreadTbEnt[tid].bUsed = 0;
 	pThreadTbEnt[tid].pThread = NULL;
+
+	return 0;
 }
 
 /* resume thread */
@@ -213,16 +232,24 @@ int thread_resume(thread_t tid){
 	Thread* pThread = (Thread*)malloc(sizeof(Thread));
 	pThread = pThreadTbEnt[tid].pThread;
 
-	//////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////
-	// 여기서부터 시작하면 됨
-	//////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////
+	/* context switching */
+	if (pThread->priority < pCurrentThead->priority) {
+		pThread->status = THREAD_STATUS_RUN;
+		///////////////////////////
+		///////////////////////////
+		//  scheduling 작업 추가  //
+		///////////////////////////
+		///////////////////////////
+		return 0;
+	}
+	/* insert ready queue */
+	else {
+		pThread->status = THREAD_STATUS_READY;
+		InsertThreadToTail(pThread, pThread->priority);
+		return 0;
+	}
 
+	return -1;
 }
 
 /* get thread id from thread table */
@@ -233,6 +260,7 @@ thread_t thread_self(){
 		if (pThreadTbEnt[id].pThread->pid == pid)
 			return id;
 	}
+
 	return -1;
 }
 
