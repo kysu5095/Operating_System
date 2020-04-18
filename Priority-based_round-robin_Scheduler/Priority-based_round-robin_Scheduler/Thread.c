@@ -152,7 +152,8 @@ thread_t get_thread_id(Thread* pThread) {
 
 /* scheduling 추가 구현하기 */
 int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*start_routine) (void *), void *arg){
-	void* stack = malloc(STACK_SIZE);
+	void* stack;
+	stack = malloc(STACK_SIZE);
 	if (!stack) {
 		perror("malloc error");
 		exit(1);
@@ -160,7 +161,7 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 
 	/* create thread */
 	int flags = SIGCHLD|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM;
-	pid_t pid = clone(*start_routine, (char*)stack + STACK_SIZE, flags, &arg);
+	pid_t pid = clone((void*)start_routine, (char*)stack + STACK_SIZE, flags, &arg);
 
 	/* stop thread immediately */
 	kill(pid, SIGSTOP);
@@ -183,7 +184,7 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 		///////////////////////////
 		///////////////////////////
 	}
-	/* go readt queue */
+	/* insert ready queue */
 	else {
 		pThread->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pThread, priority);
@@ -264,22 +265,19 @@ thread_t thread_self(){
 	return -1;
 }
 
-/*
-void func(void *arg) {
-	printf("run\n");
-	return;
-}
 
-void main(void) {
-	int pid;
-	int arg = 100;
-	int flags = SIGCHLD | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_VM;
-	char* pStack;
-	pStack = malloc(STACK_SIZE);
-
-	pid = clone(func, (char*)pStack + STACK_SIZE, flags, &arg);
-	waitpid(pid, NULL);
-
-	return;
-}
-*/
+//int func(void *arg) {
+//	printf("run\n");
+//	return 1;
+//}
+//
+//void main(void) {
+//	pid_t pid;
+//	int arg = 100;
+//	int flags = SIGCHLD | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_VM;
+//	void* pStack;
+//	pStack = malloc(STACK_SIZE);
+//
+//	pid = clone(&func, (char*)pStack + STACK_SIZE, flags, &arg);
+//	return;
+//}
