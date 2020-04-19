@@ -15,7 +15,7 @@
  DeleteThreadFromReady   : ready queue에서 해당하는 thread 삭제                           
  InsertThreadIntoWaiting : waiting queue에 thread를 'tail'로 넣음                         
  DeleteThreadFromWaiting : waiting queue에 해당하는 thread 삭제                           
- get_thread_id           : thread table에서 thread의 index를 반환                         
+ set_threadID           : thread table에서 thread의 index를 반환                         
  thread_create           : thread 생성 후 ready queue로 삽입 or context scheduling        
  thread_suspend          : 해당하는 thread 정지 >> waiting queue로 보냄                    
  thread_cancel           : 해당하는 thread 죽임 >> 메모리 해제 후 thread table에서도 삭제  
@@ -141,7 +141,7 @@ BOOL DeleteThreadFromWaiting(Thread* pThread) {
 }
 
 /* get thread id from thread table */
-thread_t get_thread_id(Thread* pThread) {
+thread_t set_threadID(Thread* pThread) {
 	for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
 		if (!pThreadTbEnt[id].bUsed) {
 			pThreadTbEnt[id].bUsed = 1;
@@ -151,7 +151,7 @@ thread_t get_thread_id(Thread* pThread) {
 	}
 }
 
-/* scheduling 추가 구현하기 */
+/* create thread */
 int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*start_routine) (void *), void *arg){
 	void* stack;
 	stack = malloc(STACK_SIZE);
@@ -160,13 +160,11 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 		exit(1);
 	}
 
-	/* create thread */
 	int flags = SIGCHLD|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM;
 	pid_t pid = clone((void*)start_routine, (char*)stack + STACK_SIZE, flags, &arg);
 
 	/* stop thread immediately */
 	kill(pid, SIGSTOP);
-	printf("stop  : %d     argument : %d\n", pid, arg);
 
 	/* allocate TCB && init TCB */
 	Thread* pThread    = (Thread*)malloc(sizeof(Thread));
@@ -177,31 +175,35 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	pThread->priority  = priority;
 	pThread->phNext    = NULL;
 	pThread->phPrev    = NULL;
-	*thread            = get_thread_id(pThread);
+	thread_t tid	   = set_threadID(pThread);
+	*thread			   = tid;
 
+	printf("%d : create thread : %d\n", getpid(), pid);
 	if (pCurrentThead == NULL || priority >= pCurrentThead->priority) {
-		printf("%d : go ready queue %d\n", getpid(), pThread->pid);
+		printf("%d : enter ready queue > %d\n", getpid(), pThread->pid);
 		pThread->status = THREAD_STATUS_READY;
-		InsertThreadToTail(pThread, priority);
+		InsertThreadToTail(pThread);
 	}
 	/* context switching */
 	else {
-		printf("%d : priority higher change cpu\n", getpid());
+		//printf("%d : priority higher change cpu\n", getpid());
 		//InsertThreadToTail(pThread, priority);
-		thread_t tid;
-		for (pthread_t id = 0; id < MAX_THREAD_NUM; id++) {
+		thread_t cpu_tid;
+		for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
 			if (!pThreadTbEnt[id].bUsed)continue;
 			if (pThreadTbEnt[id].pThread == pCurrentThead) {
-				tid = id;
+				cpu_tid = id;
 				break;
 			}
 		}
-		pCurrentThead->status = THREAD_STATUS_READY;
+		printf("%d : cpu will change %d to %d\n", getpid(), pThreadTbEnt[cpu_tid].pThread->pid, pid);
+		__ContextSwitch(cpu_tid, tid);
+		/*pCurrentThead->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pCurrentThead);
 		printf("cpu change : %d ", pCurrentThead->pid);
 		pCurrentThead = pThread;
 		printf("  to %d\n", pCurrentThead->pid);
-		pCurrentThead = THREAD_STATUS_RUN;
+		pCurrentThead = THREAD_STATUS_RUN;*/
 	}
 
 	return 1;

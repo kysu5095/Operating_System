@@ -3,7 +3,7 @@
 
 #include "Thread.h"
 
-int	RunScheduler( void );
+void	RunScheduler( void );
 void __ContextSwitch(int curpid, int newpid);
 
 /* Running 상태의 Thread를 가리키는 변수 */

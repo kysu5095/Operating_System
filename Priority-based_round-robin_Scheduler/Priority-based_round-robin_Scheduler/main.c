@@ -10,35 +10,38 @@ int foo1(int param) {
 	tid = thread_self();
 	count = 5;
 	while (count > 0) {
+		printf("%d : my thread id : %d   count : %d\n", getpid(), tid, count);
 		sleep(1);
-		printf("my thread id : %d,  parameter : %d\n", tid, param);
 		count--;
 	}
+	while (1) {}
 }
 
 int AppTask(void* param) {
 	thread_t tid1, tid2, tid3;
 	int flag = 1;
 	printf("%d : AppTask\n", getpid());
-	thread_create(&tid1, NULL, 1, (void*)foo1, (void*)flag);
-	printf("%d : create 1thread\n", getpid());
+	thread_create(&tid1, NULL, 2, (void*)foo1, &flag);
+	printf("%d : finish 1_thread\n", getpid());
 	flag++;
-	thread_create(&tid2, NULL, 1, (void*)foo1, (void*)flag);
-	printf("%d : create 2thread\n", getpid());
+	thread_create(&tid2, NULL, 2, (void*)foo1, &flag);
+	printf("%d : finish 2_thread\n", getpid());
 	flag++;
-	thread_create(&tid3, NULL, 1, (void*)foo1, (void*)flag);
-	printf("%d : create 3thread\n", getpid());
+	thread_create(&tid3, NULL, 2, (void*)foo1, &flag);
+	printf("%d : finish 3_thread\n", getpid());
 	while (1) {}
 }
 
 int main(void)
 {
+	if (signal(SIGALRM, (void*)RunScheduler) == SIG_ERR) {
+		perror("SIGALRM ERROR");
+	}
 	thread_t tid;
 	int arg = 5;
 	Init();
-	printf("%d start program\n", getpid());
-	thread_create(&tid, NULL, 4, (void*)AppTask, (void*)arg);
-	printf("%d : before first call scheduler\n", getpid());
+	printf("%d : start program\n", getpid());
+	thread_create(&tid, NULL, 3, (void*)AppTask, &arg);
 	RunScheduler();
 	while (1) {}
 }
