@@ -166,7 +166,7 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 
 	/* stop thread immediately */
 	kill(pid, SIGSTOP);
-	printf("current pid : %d  create pid : %d  process : %d\n", getpid(), pid, arg);
+	printf("stop  : %d     argument : %d\n", pid, arg);
 
 	/* allocate TCB && init TCB */
 	Thread* pThread    = (Thread*)malloc(sizeof(Thread));
@@ -175,44 +175,33 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	pThread->exitCode  = 0;
 	pThread->pid       = pid;
 	pThread->priority  = priority;
+	pThread->phNext    = NULL;
+	pThread->phPrev    = NULL;
 	*thread            = get_thread_id(pThread);
 
-	if (pCurrentThead == NULL) {
-		printf("first cpu in %d\n", pThread->pid);
-		//InsertThreadToTail(pThread, priority);
-		pCurrentThead = pThread;
-		pThread->status = THREAD_STATUS_RUN;
-		//printf("kill : %d     cont : %d\n", getpid(), pCurrentThead->pid);
-		/*kill(getpid(), SIGSTOP);
-		kill(pCurrentThead->pid, SIGCONT);
-		printf("exe pid : %d\n", getpid());*/
+	if (pCurrentThead == NULL || priority >= pCurrentThead->priority) {
+		printf("%d : go ready queue %d\n", getpid(), pThread->pid);
+		pThread->status = THREAD_STATUS_READY;
+		InsertThreadToTail(pThread, priority);
 	}
 	/* context switching */
 	else {
-		if (priority < pCurrentThead->priority) {
-			printf("priority higher change cpu\n");
-			//InsertThreadToTail(pThread, priority);
-			thread_t tid;
-			for (pthread_t id = 0; id < MAX_THREAD_NUM; id++) {
-				if (!pThreadTbEnt[id].bUsed)continue;
-				if (pThreadTbEnt[id].pThread == pCurrentThead) {
-					tid = id;
-					break;
-				}
+		printf("%d : priority higher change cpu\n", getpid());
+		//InsertThreadToTail(pThread, priority);
+		thread_t tid;
+		for (pthread_t id = 0; id < MAX_THREAD_NUM; id++) {
+			if (!pThreadTbEnt[id].bUsed)continue;
+			if (pThreadTbEnt[id].pThread == pCurrentThead) {
+				tid = id;
+				break;
 			}
-			pCurrentThead->status = THREAD_STATUS_READY;
-			InsertThreadToTail(pCurrentThead);
-			printf("pid change : %d ", pid);
-			pCurrentThead = pThread;
-			printf("  to %d\n", pCurrentThead->pid);
-			pCurrentThead = THREAD_STATUS_RUN;
 		}
-		/* insert ready queue */
-		else {
-			printf("priority lower insert ready queue\n");
-			pThread->status = THREAD_STATUS_READY;
-			InsertThreadToTail(pThread);
-		}
+		pCurrentThead->status = THREAD_STATUS_READY;
+		InsertThreadToTail(pCurrentThead);
+		printf("cpu change : %d ", pCurrentThead->pid);
+		pCurrentThead = pThread;
+		printf("  to %d\n", pCurrentThead->pid);
+		pCurrentThead = THREAD_STATUS_RUN;
 	}
 
 	return 1;

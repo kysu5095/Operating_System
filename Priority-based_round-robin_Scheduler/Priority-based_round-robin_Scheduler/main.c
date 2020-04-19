@@ -19,15 +19,15 @@ int foo1(int param) {
 int AppTask(void* param) {
 	thread_t tid1, tid2, tid3;
 	int flag = 1;
-	printf("AppTask\n");
-	thread_create(&tid1, NULL, 1, (void*)foo1, (int*)flag);
-	printf("create 1thread\n");
+	printf("%d : AppTask\n", getpid());
+	thread_create(&tid1, NULL, 1, (void*)foo1, (void*)flag);
+	printf("%d : create 1thread\n", getpid());
 	flag++;
-	thread_create(&tid2, NULL, 1, (void*)foo1, (int*)flag);
-	printf("create 2thread\n");
+	thread_create(&tid2, NULL, 1, (void*)foo1, (void*)flag);
+	printf("%d : create 2thread\n", getpid());
 	flag++;
-	thread_create(&tid3, NULL, 1, (void*)foo1, (int*)flag);
-	printf("create 3thread\n");
+	thread_create(&tid3, NULL, 1, (void*)foo1, (void*)flag);
+	printf("%d : create 3thread\n", getpid());
 	while (1) {}
 }
 
@@ -36,9 +36,9 @@ int main(void)
 	thread_t tid;
 	int arg = 5;
 	Init();
-	printf("start pid : %d\n", getpid());
-	thread_create(&tid, NULL, 4, (void*)AppTask, (int*)arg);
-	printf("before first call scheduler %d\n", getpid());
+	printf("%d start program\n", getpid());
+	thread_create(&tid, NULL, 4, (void*)AppTask, (void*)arg);
+	printf("%d : before first call scheduler\n", getpid());
 	RunScheduler();
 	while (1) {}
 }
