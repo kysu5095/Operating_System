@@ -1,6 +1,7 @@
 #include "Init.h"
 #include "Scheduler.h"
 #include "Thread.h"
+#include "test.h"
 
 #include<stdio.h>
 
@@ -34,9 +35,6 @@ int AppTask(void* param) {
 
 int main(void)
 {
-	if (signal(SIGALRM, (void*)RunScheduler) == SIG_ERR) {
-		perror("SIGALRM ERROR");
-	}
 	thread_t tid;
 	int arg = 5;
 	Init();

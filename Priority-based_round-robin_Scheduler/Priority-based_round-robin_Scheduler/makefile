@@ -1,5 +1,7 @@
-exefile : init.o scheduler.o thread.o main.o
-	gcc -o exefile init.o  scheduler.o thread.o main.o
+exefile : test.o init.o scheduler.o thread.o main.o
+	gcc -o exefile test.o init.o  scheduler.o thread.o main.o
+test.o : test.c
+	gcc -c -o test.o test.c
 init.o : init.c
 	gcc -c -o init.o init.c
 scheduler.o : Scheduler.c

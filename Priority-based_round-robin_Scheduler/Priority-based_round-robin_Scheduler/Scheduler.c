@@ -118,7 +118,7 @@ thread_t get_threadID(Thread* pThread) {
 void RunScheduler(void) {
 	printf("%d : run scheduler\n", getpid());
 	alarm(0);
-	//signal(SIGALRM, (void*)RunScheduler);
+	signal(SIGALRM, (void*)RunScheduler);
 	/*if (pCurrentThead != NULL) {
 		if (!is_empty()) {
 			InsertThreadToReady(pCurrentThead);
