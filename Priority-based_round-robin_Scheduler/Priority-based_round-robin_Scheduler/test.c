@@ -1,26 +1,45 @@
 #include "test.h"
 
-void threadF(int signo) {
+int foo1(void* param) {
+	thread_t tid = 0;
 	int cnt = 0;
-	p_thread tid = 0;
 	tid = thread_self();
 	cnt = 5;
-	while (cnt > 0) {
-		sleep(1);
-		printf("my thread id (%d) arg is(%d)\n", tid, signo);
+	while (cnt) {
+		printf("%d : foo1 exe my tid is (%d),  cnt is (%d)\n", getpid(), tid, cnt);
 		cnt--;
+		sleep(1);
 	}
-	while (1) {}
 }
 
-void main(void) {
-	signal(SIGALRM, threadF);
-	/*int pid;
-	int arg = 100;
-	int flags = SIGCHLD|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM;
-	char* pStack;
-	pStack = malloc(STACK_SIZE);
-	pid = clone(&threadF, (char*)pStack+STACK_SIZE, flags, &arg);*/
-	//kill(pid, SIGSTOP);
-	alarm(2);
+int foo2(void* param) {
+	thread_t tid = 0;
+	int cnt = 0;
+	tid = thread_self();
+	cnt = 5;
+	while (cnt) {
+		printf("%d : foo2 exe my tid is (%d),  cnt is (%d)\n", getpid(), tid, cnt);
+		cnt--;
+		sleep(1);
+	}
+}
+
+int foo3(void* param) {
+	thread_t tid = 0;
+	int cnt = 0;
+	tid = thread_self();
+	cnt = 5;
+	while (cnt) {
+		printf("%d : foo3 exe my tid is (%d),  cnt is (%d)\n", getpid(), tid, cnt);
+		cnt--;
+		sleep(1);
+	}
+}
+void TestCase1(void) {
+	int a = 10, b = 20, c = 30;
+	thread_t t1, t2, t3;
+	thread_create(&t1, NULL, 3, (void*)foo1, &a);
+	thread_create(&t2, NULL, 3, (void*)foo2, &b);
+	thread_create(&t3, NULL, 3, (void*)foo3, &c);
+	while (1) {}
 }

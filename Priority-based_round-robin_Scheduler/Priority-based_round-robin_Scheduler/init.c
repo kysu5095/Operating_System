@@ -3,6 +3,9 @@
 #include "Scheduler.h"
 
 void Init(void) {
+	/* register signal handler */
+	signal(SIGALRM, (void*)RunScheduler);
+
 	/* running thread init */
 	pCurrentThead = NULL;
 

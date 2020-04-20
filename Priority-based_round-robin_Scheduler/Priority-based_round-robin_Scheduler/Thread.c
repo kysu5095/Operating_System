@@ -54,6 +54,15 @@ void InsertThreadToTail(Thread* pThread) {
 			pReadyQueueEnt[priority].pTail->phPrev = tmp;
 			pReadyQueueEnt[priority].pTail->phNext = NULL;
 			tmp->phNext = pReadyQueueEnt[priority].pTail;
+
+			/* update thread table */
+			for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
+				if (!pThreadTbEnt[id].bUsed) continue;
+				if (pThreadTbEnt[id].pThread->pid == tmp->pid) {
+					pThreadTbEnt[id].pThread = tmp;
+					break;
+				}
+			}
 		}
 	}
 	pReadyQueueEnt[priority].queueCount++;
@@ -178,16 +187,15 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	thread_t tid	   = set_threadID(pThread);
 	*thread			   = tid;
 
-	printf("%d : create thread : %d\n", getpid(), pid);
+	//printf("%d : create thread : %d(%p)\n", getpid(), pid, pThread);
 	if (pCurrentThead == NULL || priority >= pCurrentThead->priority) {
-		printf("%d : enter ready queue > %d\n", getpid(), pThread->pid);
+		//printf("%d : enter ready queue > %d(%p)\n", getpid(), pThread->pid, pThread);
 		pThread->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pThread);
 	}
 	/* context switching */
 	else {
-		//printf("%d : priority higher change cpu\n", getpid());
-		//InsertThreadToTail(pThread, priority);
+		alarm(0);
 		thread_t cpu_tid;
 		for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
 			if (!pThreadTbEnt[id].bUsed)continue;
@@ -196,13 +204,13 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 				break;
 			}
 		}
-		printf("%d : cpu will change %d to %d\n", getpid(), pThreadTbEnt[cpu_tid].pThread->pid, pid);
+		//printf("%d : cpu will change %d to %d\n", getpid(), pThreadTbEnt[cpu_tid].pThread->pid, pid);
 		__ContextSwitch(cpu_tid, tid);
 		/*pCurrentThead->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pCurrentThead);
-		printf("cpu change : %d ", pCurrentThead->pid);
+		//printf("cpu change : %d ", pCurrentThead->pid);
 		pCurrentThead = pThread;
-		printf("  to %d\n", pCurrentThead->pid);
+		//printf("  to %d\n", pCurrentThead->pid);
 		pCurrentThead = THREAD_STATUS_RUN;*/
 	}
 
@@ -283,7 +291,7 @@ thread_t thread_self(){
 
 
 //int func(void *arg) {
-//	printf("run\n");
+//	//printf("run\n");
 //	return 1;
 //}
 //
