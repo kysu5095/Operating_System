@@ -187,32 +187,13 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	thread_t tid	   = set_threadID(pThread);
 	*thread			   = tid;
 
-	printf("%d : create thread : %d(%p)\n", getpid(), pid, pThread);
+	/* move TCB to ready queue */
 	pThread->status = THREAD_STATUS_READY;
 	InsertThreadToTail(pThread);
 
 	/* context switching */
 	if (pCurrentThead != NULL && priority < pCurrentThead->priority) 
 		kill(getpid(), SIGSTOP);
-
-		/*alarm(0);
-		thread_t cpu_tid;
-		for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
-			if (!pThreadTbEnt[id].bUsed)continue;
-			if (pThreadTbEnt[id].pThread == pCurrentThead) {
-				cpu_tid = id;
-				break;
-			}
-		}
-		printf("parent pid : %d\n", getppid());
-		printf("%d : cpu will change %d to %d\n", getpid(), pThreadTbEnt[cpu_tid].pThread->pid, pid);
-		__ContextSwitch(cpu_tid, tid);*/
-		/*pCurrentThead->status = THREAD_STATUS_READY;
-		InsertThraadToTail(pCurrentThead);
-		//printf("cpu change : %d ", pCurrentThead->pid);
-		pCurrentThead = pThread;
-		//printf("  to %d\n", pCurrentThead->pid);
-		pCurrentThead = THREAD_STATUS_RUN;*/
 
 	return 1;
 }
@@ -236,6 +217,7 @@ int thread_suspend(thread_t tid){
 /* kill thread */
 /* note : don't kill oneself!!!! */
 int thread_cancel(thread_t tid){
+	if (!pThreadTbEnt[tid].bUsed) return -1;
 	pid_t pid = pThreadTbEnt[tid].pThread->pid;
 	/* kill thread */
 	kill(pid, SIGKILL);
@@ -254,27 +236,19 @@ int thread_cancel(thread_t tid){
 
 /* resume thread */
 int thread_resume(thread_t tid){
+	if (!pThreadTbEnt[tid].bUsed) return -1;
 	Thread* pThread = (Thread*)malloc(sizeof(Thread));
 	pThread = pThreadTbEnt[tid].pThread;
 
-	/* context switching */
-	if (pThread->priority < pCurrentThead->priority) {
-		pThread->status = THREAD_STATUS_RUN;
-		///////////////////////////
-		///////////////////////////
-		//  scheduling 작업 추가  //
-		///////////////////////////
-		///////////////////////////
-		return 0;
-	}
 	/* insert ready queue */
-	else {
-		pThread->status = THREAD_STATUS_READY;
-		InsertThreadToTail(pThread);
-		return 0;
-	}
+	pThread->status = THREAD_STATUS_READY;
+	InsertThreadToTail(pThread);
 
-	return -1;
+	/* context switching */
+	if (pThread->priority < pCurrentThead->priority)
+		kill(getpid(), SIGSTOP);
+
+	return 0;
 }
 
 /* get thread id from thread table */

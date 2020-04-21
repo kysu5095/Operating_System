@@ -126,52 +126,28 @@ thread_t get_threadID(const Thread* pThread) {
 }
 
 void RunScheduler(void) {
+	/* reset alarm */
 	alarm(0);
-	//printf("%d : run scheduler\n", getpid());
-	if (pCurrentThead != NULL) {
-		//printf("%d : %d cpu interrupt\n", getpid(), pCurrentThead->pid);
+
+	/* prepare scheduling */
+	if (pCurrentThead != NULL) 
 		kill(pCurrentThead->pid, SIGSTOP);
-		printq();
-	}
-	/*if (pCurrentThead != NULL) {
-		if (!is_empty()) {
-			InsertThreadToReady(pCurrentThead);
-			Thread* nThread = (Thread*)malloc(sizeof(Thread));
-			nThread = GetThreadFromReady();
-			thread_t tid1, tid2;
-			tid1 = get_threadID(pCurrentThead);
-			tid2 = get_threadID(nThread);
-			__ContextSwitch(tid1, tid2);
-		}
-	}
-	else {
-		pCurrentThead = GetThreadFromReady();
-		pCurrentThead->status = THREAD_STATUS_RUN;
-		kill(pCurrentThead->pid, SIGCONT);
-	}*/
-	//if (is_empty()) {
-	//	//printf("%d : start child thread %d\n", getpid(), pCurrentThead->pid);
-	//	kill(pCurrentThead->pid, SIGCONT);
-	//	//kill(getpid(), SIGSTOP);
-	//	printq();
-	//}
-	//else {
+
 	/* when the thread first enter the cpu */
 	if (pCurrentThead == NULL) {
 		pCurrentThead = GetThreadFromReady();
 		pCurrentThead->status = THREAD_STATUS_RUN;
-		//printf("%d : enter the cpu %d\n", getpid(), pCurrentThead->pid);
 		kill(pCurrentThead->pid, SIGCONT);
 		alarm(TIMESLICE);
 	}
 	else {
 		/* if ready queue is empty */
 		if (is_empty()) {
-			//printf("%d : ready queue is empty so cpu will sleep\n", getpid());
 			//question
 			pCurrentThead->status = THREAD_STATUS_READY;
 			alarm(TIMESLICE);
 		}
+		/* prepare context switching */
 		else {
 			InsertThreadToReady(pCurrentThead);
 			Thread* nThread = (Thread*)malloc(sizeof(Thread));
@@ -181,41 +157,23 @@ void RunScheduler(void) {
 			curtid = get_threadID(pCurrentThead);
 			newtid = get_threadID(nThread);
 			__ContextSwitch(curtid, newtid);
-
-			////printf("%d : before get thread from ready queue %p\n", getpid(), nThread);
-			//nThread = GetThreadFromReady();
-			////printf("%d : after get thread from ready queue  %d(%p)", getpid(), nThread->pid, nThread);
-			//InsertThreadToReady(pCurrentThead);
-
-			//thread_t tid1 = 0, tid2 = 0;
-			//tid1 = get_threadID(pCurrentThead);
-			//tid2 = get_threadID(nThread);
-			////printf("  tid : %d\n", tid2);
-			//__ContextSwitch(tid1, tid2);
 		}
 	}
 }
 
 /* context switching */
 void __ContextSwitch(int curpid, int newpid){
-	//printf("%d : lets context_switch  %d to %d\n", getpid(), curpid, newpid);
 
 	/* stop current thread */
-	//printf("%d : stop  %d(%p)\n", getpid(), pThreadTbEnt[curpid].pThread->pid, pThreadTbEnt[curpid].pThread);
 	pThreadTbEnt[curpid].pThread->status = THREAD_STATUS_READY;
-	kill(pThreadTbEnt[curpid].pThread->pid, SIGSTOP);
+	//kill(pThreadTbEnt[curpid].pThread->pid, SIGSTOP);
 
 	/* change cpu thread */
 	pCurrentThead = pThreadTbEnt[newpid].pThread;
-	//printf("%d : change cpu %d(%p)\n", getpid(), pCurrentThead->pid, pCurrentThead);
 
 	/* start new thread */
-	//printf("%d : start %d(%p)\n", getpid(), pThreadTbEnt[newpid].pThread->pid, pThreadTbEnt[newpid].pThread);
 	pThreadTbEnt[newpid].pThread->status = THREAD_STATUS_RUN;
 	kill(pThreadTbEnt[newpid].pThread->pid, SIGCONT);
 
 	alarm(TIMESLICE);
-
-	//printf("==============AFTER SWITCHING==============\n");
-	printq();
 }
