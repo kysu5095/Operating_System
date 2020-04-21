@@ -26,7 +26,7 @@ int main(void)
 	int arg = 5;
 	Init();
 	printf("%d : start program\n", getpid());
-	thread_create(&tid, NULL, 3, (void*)TestCase1, (void*)0);
+	thread_create(&tid, NULL, 2, (void*)TestCase1, (void*)0);
 	RunScheduler();
 	while (1) {}
 }

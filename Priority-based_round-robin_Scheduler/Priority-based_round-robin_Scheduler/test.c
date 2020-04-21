@@ -39,7 +39,7 @@ void TestCase1(void) {
 	int a = 10, b = 20, c = 30;
 	thread_t t1, t2, t3;
 	thread_create(&t1, NULL, 2, (void*)foo1, &a);
-	thread_create(&t2, NULL, 2, (void*)foo2, &b);
+	thread_create(&t2, NULL, 3, (void*)foo2, &b);
 	thread_create(&t3, NULL, 2, (void*)foo3, &c);
 	while (1) {}
 }
