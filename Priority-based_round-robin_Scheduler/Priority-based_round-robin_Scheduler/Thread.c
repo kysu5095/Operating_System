@@ -187,7 +187,7 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	thread_t tid	   = set_threadID(pThread);
 	*thread			   = tid;
 
-	//printf("%d : create thread : %d(%p)\n", getpid(), pid, pThread);
+	printf("%d : create thread : %d(%p)\n", getpid(), pid, pThread);
 	if (pCurrentThead == NULL || priority >= pCurrentThead->priority) {
 		//printf("%d : enter ready queue > %d(%p)\n", getpid(), pThread->pid, pThread);
 		pThread->status = THREAD_STATUS_READY;
@@ -204,7 +204,8 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 				break;
 			}
 		}
-		//printf("%d : cpu will change %d to %d\n", getpid(), pThreadTbEnt[cpu_tid].pThread->pid, pid);
+		printf("parent pid : %d\n", getppid());
+		printf("%d : cpu will change %d to %d\n", getpid(), pThreadTbEnt[cpu_tid].pThread->pid, pid);
 		__ContextSwitch(cpu_tid, tid);
 		/*pCurrentThead->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pCurrentThead);
