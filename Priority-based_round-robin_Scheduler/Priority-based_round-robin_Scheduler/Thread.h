@@ -55,11 +55,13 @@ Thread*		 pWaitingQueueHead;
 Thread*		 pWaitingQueueTail;
 ThreadTblEnt pThreadTbEnt[MAX_THREAD_NUM];
 
-int 		thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*start_routine) (void *), void *arg);
-int 		thread_suspend(thread_t tid);
-int 		thread_cancel(thread_t tid);
-int			thread_resume(thread_t tid);
-thread_t 	thread_self();
+int 	 thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*start_routine) (void *), void *arg);
+int 	 thread_suspend(thread_t tid);
+int 	 thread_cancel(thread_t tid);
+int		 thread_resume(thread_t tid);
+thread_t thread_self();
+int      thread_join(thread_t tid, void** retval);
+int      thread_exit(void* retval);
 
 
 #endif /* __THREAD_H__ */

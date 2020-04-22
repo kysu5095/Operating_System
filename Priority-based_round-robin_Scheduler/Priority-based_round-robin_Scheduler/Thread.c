@@ -263,19 +263,10 @@ thread_t thread_self(){
 	return -1;
 }
 
+int thread_join(thread_t tid, void** retval) {
 
-//int func(void *arg) {
-//	//printf("run\n");
-//	return 1;
-//}
-//
-//void main(void) {
-//	pid_t pid;
-//	int arg = 100;
-//	int flags = SIGCHLD | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_VM;
-//	void* pStack;
-//	pStack = malloc(STACK_SIZE);
-//
-//	pid = clone(&func, (char*)pStack + STACK_SIZE, flags, &arg);
-//	return;
-//}
+}
+
+int thread_exit(void* retval) {
+
+}
