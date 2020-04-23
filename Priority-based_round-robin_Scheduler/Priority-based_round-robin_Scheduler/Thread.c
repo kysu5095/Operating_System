@@ -134,7 +134,7 @@ void InsertThreadIntoWaiting(Thread* pThread) {
 /* delete thread form waiting queue */
 BOOL DeleteThreadFromWaiting(Thread* pThread) {
 	if (pWaitingQueueTail->phPrev == pWaitingQueueHead) 
-		return 0;
+		return -1;
 
 	Thread* tmp = pWaitingQueueHead->phNext;
 	while (1) {
@@ -240,6 +240,9 @@ int thread_resume(thread_t tid){
 	Thread* pThread = (Thread*)malloc(sizeof(Thread));
 	pThread = pThreadTbEnt[tid].pThread;
 
+	/* get thread from waiting queue */
+	DeleteThreadFromWaiting(pThread);
+
 	/* insert ready queue */
 	pThread->status = THREAD_STATUS_READY;
 	InsertThreadToTail(pThread);
@@ -268,5 +271,10 @@ int thread_join(thread_t tid, void** retval) {
 }
 
 int thread_exit(void* retval) {
-
+	thread_t tid = thread_self();
+	pThreadTbEnt[tid].pThread->exitCode = *(int*)retval;
+	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
+	InsertThreadIntoWaiting(pThreadTbEnt[tid].pThread);
+	pCurrentThead = NULL;
+	exit(1);
 }
