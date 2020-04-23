@@ -126,6 +126,7 @@ thread_t get_threadID(const Thread* pThread) {
 }
 
 void RunScheduler(void) {
+	printf("%d : run scheduler\n", getpid());
 	/* reset alarm */
 	alarm(0);
 
@@ -145,6 +146,7 @@ void RunScheduler(void) {
 		if (is_empty()) {
 			//question
 			pCurrentThead->status = THREAD_STATUS_READY;
+			kill(pCurrentThead->pid, SIGCONT);
 			alarm(TIMESLICE);
 		}
 		/* prepare context switching */

@@ -267,11 +267,22 @@ thread_t thread_self(){
 }
 
 int thread_join(thread_t tid, void** retval) {
+	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE) {
 
+	}
+	else {
+		printf("%d : thread_join (%d)\n", getpid(), (int*)retval);
+		pCurrentThead->status = THREAD_STATUS_WAIT;
+		InsertThreadIntoWaiting(pCurrentThead);
+		pCurrentThead = NULL;
+		kill(getpid(), SIGSTOP);
+
+	}
 }
 
 int thread_exit(void* retval) {
 	thread_t tid = thread_self();
+	printf("%d : thread_exit (%d)\n", getpid(), tid);
 	pThreadTbEnt[tid].pThread->exitCode = *(int*)retval;
 	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
 	InsertThreadIntoWaiting(pThreadTbEnt[tid].pThread);
