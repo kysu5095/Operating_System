@@ -106,6 +106,14 @@ Thread* GetThreadFromReady() {
 	return NULL;
 }
 
+/* get highest priority from  ready queue*/
+int get_priorityFromReady() {
+	for (thread_t id = 0; id < MAX_READYQUEUE_NUM; id++) {
+		if (pReadyQueueEnt[id].queueCount) return id;
+	}
+	return -1;
+}
+
 /* make sure ready queue is empty */
 BOOL is_empty() {
 	for (thread_t id = 0; id < MAX_READYQUEUE_NUM; id++) {
@@ -127,6 +135,7 @@ thread_t get_threadID(const Thread* pThread) {
 
 void RunScheduler(void) {
 	printf("%d : run scheduler\n", getpid());
+	fflush(stdout);
 	/* reset alarm */
 	alarm(0);
 
@@ -134,31 +143,43 @@ void RunScheduler(void) {
 	if (pCurrentThead != NULL) 
 		kill(pCurrentThead->pid, SIGSTOP);
 
-	/* when the thread first enter the cpu */
-	if (pCurrentThead == NULL) {
-		pCurrentThead = GetThreadFromReady();
-		pCurrentThead->status = THREAD_STATUS_RUN;
-		kill(pCurrentThead->pid, SIGCONT);
+	/* ready queue is empty */
+	if (is_empty()) {
+		/* keep running current thread */
+		if (pCurrentThead != NULL) {
+			pCurrentThead->status = THREAD_STATUS_RUN;
+			kill(pCurrentThead->pid, SIGCONT);
+		}
 		alarm(TIMESLICE);
 	}
 	else {
-		/* if ready queue is empty */
-		if (is_empty()) {
-			//question
-			pCurrentThead->status = THREAD_STATUS_READY;
+		/* when the thread first enter the cpu */
+		if (pCurrentThead == NULL) {
+			pCurrentThead = GetThreadFromReady();
+			pCurrentThead->status = THREAD_STATUS_RUN;
+			printf("%d : run cpu %d\n", getpid(), pCurrentThead->pid);
+			fflush(stdout);
 			kill(pCurrentThead->pid, SIGCONT);
 			alarm(TIMESLICE);
 		}
-		/* prepare context switching */
 		else {
-			InsertThreadToReady(pCurrentThead);
-			Thread* nThread = (Thread*)malloc(sizeof(Thread));
-			nThread = GetThreadFromReady();
+			int nPriority = get_priorityFromReady();
+			/* no context_switching */
+			if (nPriority > pCurrentThead->priority) {
+				kill(pCurrentThead->pid, SIGCONT);
+				alarm(TIMESLICE);
+			}
+			/* context_switching */
+			else {
+				Thread* nThread = (Thread*)malloc(sizeof(Thread));
+				nThread = GetThreadFromReady();
+				InsertThreadToReady(pCurrentThead);
 
-			thread_t curtid, newtid;
-			curtid = get_threadID(pCurrentThead);
-			newtid = get_threadID(nThread);
-			__ContextSwitch(curtid, newtid);
+				thread_t curtid, newtid;
+				curtid = get_threadID(pCurrentThead);
+				newtid = get_threadID(nThread);
+				__ContextSwitch(curtid, newtid);
+			}
 		}
 	}
 }

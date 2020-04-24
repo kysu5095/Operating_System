@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#define TIMESLICE			(2)
+#define TIMESLICE			(10)
 #define MAX_READYQUEUE_NUM	(8)
 #define MAX_THREAD_NUM		(64)
 

@@ -5,6 +5,7 @@
 void Init(void) {
 	/* register signal handler */
 	signal(SIGALRM, (void*)RunScheduler);
+	signal(SIGUSR1, (void*)RunScheduler);
 
 	/* running thread init */
 	pCurrentThead = NULL;

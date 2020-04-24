@@ -1,10 +1,10 @@
 #define _GNU_SOURCE
+#define STACK_SIZE    1024*64
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
 #include <stdio.h>
 #include <stdlib.h>
-#define STACK_SIZE    1024*64
 //#define CLONE_FS      0x00000200
 //#define CLONE_FILES   0x00000400
 //#define CLONE_SIGHAND 0x00000800
@@ -15,7 +15,7 @@
  DeleteThreadFromReady   : ready queue에서 해당하는 thread 삭제                           
  InsertThreadIntoWaiting : waiting queue에 thread를 'tail'로 넣음                         
  DeleteThreadFromWaiting : waiting queue에 해당하는 thread 삭제                           
- set_threadID           : thread table에서 thread의 index를 반환                         
+ set_threadID            : thread table에서 thread의 index를 반환                         
  thread_create           : thread 생성 후 ready queue로 삽입 or context scheduling        
  thread_suspend          : 해당하는 thread 정지 >> waiting queue로 보냄                    
  thread_cancel           : 해당하는 thread 죽임 >> 메모리 해제 후 thread table에서도 삭제  
@@ -171,7 +171,7 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 
 	int flags = SIGCHLD|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM;
 	pid_t pid = clone((void*)start_routine, (char*)stack + STACK_SIZE, flags, &arg);
-
+	printf("%d : create thread %d\n", getpid(), pid);
 	/* stop thread immediately */
 	kill(pid, SIGSTOP);
 
@@ -187,13 +187,18 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	thread_t tid	   = set_threadID(pThread);
 	*thread			   = tid;
 
-	/* move TCB to ready queue */
-	pThread->status = THREAD_STATUS_READY;
-	InsertThreadToTail(pThread);
-
 	/* context switching */
-	if (pCurrentThead != NULL && priority < pCurrentThead->priority) 
-		kill(getpid(), SIGSTOP);
+	if (pCurrentThead != NULL && priority < pCurrentThead->priority) {
+		pCurrentThead->status = THREAD_STATUS_READY;
+		InsertThreadToTail(pCurrentThead);
+		pThread->status = THREAD_STATUS_RUN;
+		kill(getppid(), SIGUSR1);
+	}
+	/* move TCB to ready queue */
+	else{
+		pThread->status = THREAD_STATUS_READY;
+		InsertThreadToTail(pThread);
+	}
 
 	return 1;
 }
