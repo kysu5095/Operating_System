@@ -162,21 +162,18 @@ thread_t set_threadID(Thread* pThread) {
 	}
 }
 
+void exit_signal(int signo) {
+	printf("%d : signal arrived %d\n", getpid(), signo);
+}
+
 /* create thread */
 int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*start_routine) (void *), void *arg){
 	void* stack;
 	stack = malloc(STACK_SIZE);
-	if (!stack) {
-		perror("malloc error");
-		exit(1);
-	}
-
 	int flags = SIGCHLD|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM;
 	pid_t pid = clone((void*)start_routine, (char*)stack + STACK_SIZE, flags, &arg);
-	kill(pid, SIGSTOP);
-	printf("%d : create thread %d\n", getpid(), pid);
-	fflush(stdout);
 	/* stop thread immediately */
+	kill(pid, SIGSTOP);
 
 	/* allocate TCB && init TCB */
 	Thread* pThread    = (Thread*)malloc(sizeof(Thread));
@@ -249,9 +246,9 @@ int thread_resume(thread_t tid){
 	pThread = pThreadTbEnt[tid].pThread;
 
 	/* get thread from waiting queue */
-	DeleteThreadFromWaiting(pThread);
+	if (DeleteThreadFromWaiting(pThread) == -1) return -1;
 
-	if (pCurrentThead != NULL && priority < pCurrentThead->priority) {
+	if (pCurrentThead != NULL && pThread->priority < pCurrentThead->priority) {
 		pCurrentThead->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pCurrentThead);
 		pThread->status = THREAD_STATUS_RUN;
@@ -280,26 +277,40 @@ thread_t thread_self(){
 
 /* wait specific child  thread */
 int thread_join(thread_t tid, void** retval) {
+	/* child thread status is zombie */
 	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE) {
-
+		pThreadTbEnt[tid].pThread->exitCode = *(int*)retval;
+		if (DeleteThreadFromWaiting(pThreadTbEnt[tid].pThread) == -1) return -1;
+		free(pThreadTbEnt[tid].pThread);
+		pThreadTbEnt[tid].bUsed = 0;
+		pThreadTbEnt[tid].pThread = NULL;
+		return 1;
 	}
 	else {
-		printf("%d : thread_join (%d)\n", getpid(), (int*)retval);
+		//signal(SIGCHLD, (void*)exit_signal);
+		printf("%d : thread_join (%d)\n", getpid(), *(int*)&retval);
 		pCurrentThead->status = THREAD_STATUS_WAIT;
 		InsertThreadIntoWaiting(pCurrentThead);
 		pCurrentThead = NULL;
-		kill(getpid(), SIGSTOP);
-
+		kill(getppid(), SIGUSR1);
+		while (1) {
+			if (pThreadTbEnt[tid].pThread->exitCode == *(int*)retval) 
+				break;
+		}
+		printf("=============\n");
+		printf("%d : arrive!!\n", getpid());
 	}
 }
 
 /* thread terminate itself */
 int thread_exit(void* retval) {
 	thread_t tid = thread_self();
-	printf("%d : thread_exit (%d)\n", getpid(), tid);
 	pThreadTbEnt[tid].pThread->exitCode = *(int*)retval;
 	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
 	InsertThreadIntoWaiting(pThreadTbEnt[tid].pThread);
 	pCurrentThead = NULL;
+	kill(getppid(), SIGUSR1);
 	exit(1);
+
+	return 0;
 }

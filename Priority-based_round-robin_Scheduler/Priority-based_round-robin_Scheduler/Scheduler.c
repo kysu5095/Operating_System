@@ -134,6 +134,7 @@ thread_t get_threadID(const Thread* pThread) {
 }
 
 void RunScheduler(void) {
+	printf("%d : run scheduler\n", getpid());
 	/* reset alarm */
 	alarm(0);
 
