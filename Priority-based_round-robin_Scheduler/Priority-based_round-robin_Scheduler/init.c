@@ -30,18 +30,4 @@ void Init(void) {
 	pWaitingQueueHead->phPrev = NULL;
 	pWaitingQueueTail->phNext = NULL;
 	pWaitingQueueTail->phPrev = pWaitingQueueHead;
-
-	/* main thread init */
-	/*Thread* mainThread = (Thread*)malloc(sizeof(Thread));
-	mainThread->stackSize = NULL;
-	mainThread->stackAddr = NULL;
-	mainThread->status    = THREAD_STATUS_RUN;
-	mainThread->exitCode  = NULL;
-	mainThread->pid       = getpid();
-	mainThread->priority  = 8;
-	mainThread->phNext    = NULL;
-	mainThread->phPrev    = NULL;
-	pCurrentThead         = mainThread;
-	pThreadTbEnt[0].bUsed = 1;
-	pThreadTbEnt[0].pThread = mainThread;*/
 }
