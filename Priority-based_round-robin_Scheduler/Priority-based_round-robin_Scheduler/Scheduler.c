@@ -157,8 +157,6 @@ void RunScheduler(void) {
 		if (pCurrentThead == NULL) {
 			pCurrentThead = GetThreadFromReady();
 			pCurrentThead->status = THREAD_STATUS_RUN;
-			printf("%d : run cpu %d\n", getpid(), pCurrentThead->pid);
-			fflush(stdout);
 			kill(pCurrentThead->pid, SIGCONT);
 			alarm(TIMESLICE);
 		}
@@ -186,7 +184,7 @@ void RunScheduler(void) {
 
 /* context switching */
 void __ContextSwitch(int curpid, int newpid){
-
+	printf("%d : context switch %d -> %d\n", getpid(), curpid, newpid);
 	/* stop current thread */
 	pThreadTbEnt[curpid].pThread->status = THREAD_STATUS_READY;
 	//kill(pThreadTbEnt[curpid].pThread->pid, SIGSTOP);

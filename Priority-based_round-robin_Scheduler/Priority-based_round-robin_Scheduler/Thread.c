@@ -171,9 +171,10 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 
 	int flags = SIGCHLD|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM;
 	pid_t pid = clone((void*)start_routine, (char*)stack + STACK_SIZE, flags, &arg);
-	printf("%d : create thread %d\n", getpid(), pid);
-	/* stop thread immediately */
 	kill(pid, SIGSTOP);
+	printf("%d : create thread %d\n", getpid(), pid);
+	fflush(stdout);
+	/* stop thread immediately */
 
 	/* allocate TCB && init TCB */
 	Thread* pThread    = (Thread*)malloc(sizeof(Thread));
