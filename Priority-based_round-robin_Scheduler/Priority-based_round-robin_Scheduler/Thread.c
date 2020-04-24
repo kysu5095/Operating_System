@@ -20,7 +20,9 @@
  thread_suspend          : 해당하는 thread 정지 >> waiting queue로 보냄                    
  thread_cancel           : 해당하는 thread 죽임 >> 메모리 해제 후 thread table에서도 삭제  
  thread_rsume            : 해당하는 thread 다시 시작 >> ready queue or context scheduling  
- thread_self             : 이 함수를 호출한 thread의 tid를 반환                            
+ thread_self             : 이 함수를 호출한 thread의 tid를 반환     
+ thread_join			 : tid번 쓰레드가 종료할 때까지 기다림
+ thread_exit			 : 자기 자신을 종료하는 함수
 */
 
 /* insert thread to **Tail** of ready queue */
@@ -249,13 +251,17 @@ int thread_resume(thread_t tid){
 	/* get thread from waiting queue */
 	DeleteThreadFromWaiting(pThread);
 
-	/* insert ready queue */
-	pThread->status = THREAD_STATUS_READY;
-	InsertThreadToTail(pThread);
-
-	/* context switching */
-	if (pThread->priority < pCurrentThead->priority)
-		kill(getpid(), SIGSTOP);
+	if (pCurrentThead != NULL && priority < pCurrentThead->priority) {
+		pCurrentThead->status = THREAD_STATUS_READY;
+		InsertThreadToTail(pCurrentThead);
+		pThread->status = THREAD_STATUS_RUN;
+		kill(getppid(), SIGUSR1);
+	}
+	/* move TCB to ready queue */
+	else {
+		pThread->status = THREAD_STATUS_READY;
+		InsertThreadToTail(pThread);
+	}
 
 	return 0;
 }
@@ -272,6 +278,7 @@ thread_t thread_self(){
 	return -1;
 }
 
+/* wait specific child  thread */
 int thread_join(thread_t tid, void** retval) {
 	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE) {
 
@@ -286,6 +293,7 @@ int thread_join(thread_t tid, void** retval) {
 	}
 }
 
+/* thread terminate itself */
 int thread_exit(void* retval) {
 	thread_t tid = thread_self();
 	printf("%d : thread_exit (%d)\n", getpid(), tid);
