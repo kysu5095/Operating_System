@@ -57,6 +57,7 @@ void TestCase1(void) {
 	void *tmp = &exitCode;
 	thread_t t1, t2, t3, t4;
 	thread_create(&t1, NULL, 4, (void*)foo1, &a);
+	//printf("%d : tmp : %d    exitCode : %d\n", getpid(), tmp, &exitCode);
 	thread_join(t1, &tmp);
 	thread_create(&t2, NULL, 3, (void*)foo2, &a);
 	thread_create(&t3, NULL, 3, (void*)foo3, &a);

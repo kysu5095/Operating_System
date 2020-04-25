@@ -279,7 +279,7 @@ thread_t thread_self(){
 int thread_join(thread_t tid, void** retval) {
 	/* child thread status is zombie */
 	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE) {
-		pThreadTbEnt[tid].pThread->exitCode = *(int*)retval;
+		//pThreadTbEnt[tid].pThread->exitCode = (int**)retval;
 		if (DeleteThreadFromWaiting(pThreadTbEnt[tid].pThread) == -1) return -1;
 		free(pThreadTbEnt[tid].pThread);
 		pThreadTbEnt[tid].bUsed = 0;
@@ -288,13 +288,13 @@ int thread_join(thread_t tid, void** retval) {
 	}
 	else {
 		//signal(SIGCHLD, (void*)exit_signal);
-		printf("%d : thread_join (%d)\n", getpid(), *(int*)&retval);
+		printf("%d : thread_join (%d)\n", getpid(), *(int*)*retval);
 		pCurrentThead->status = THREAD_STATUS_WAIT;
 		InsertThreadIntoWaiting(pCurrentThead);
 		pCurrentThead = NULL;
 		kill(getppid(), SIGUSR1);
 		while (1) {
-			if (pThreadTbEnt[tid].pThread->exitCode == *(int*)retval) 
+			if (pThreadTbEnt[tid].pThread->exitCode == *(int*)*retval) 
 				break;
 		}
 		printf("=============\n");
