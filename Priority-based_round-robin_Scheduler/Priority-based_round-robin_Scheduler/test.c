@@ -61,7 +61,7 @@ void TestCase1(void) {
 	void *tmp2 = &exitCode2;
 	thread_t t1, t2, t3, t4;
 	thread_create(&t1, NULL, 4, (void*)foo1, &a);
-	//thread_join(t1, &tmp);
+	thread_join(t1, &tmp);
 	thread_create(&t2, NULL, 4, (void*)foo2, &a);
 	//sleep(2);
 	//thread_join(t2, &tmp2);

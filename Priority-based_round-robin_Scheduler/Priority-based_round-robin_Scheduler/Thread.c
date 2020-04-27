@@ -305,7 +305,14 @@ int thread_join(thread_t tid, void** retval) {
 		sigprocmask(SIG_UNBLOCK, &oldset, NULL);
 		signal(SIGCHLD, (void*)exit_signal);
 		kill(getpid(), SIGSTOP);*/
+		sigset_t set;
+		sigemptyset(&set);
+		sigaddset(&set, SIGCHLD);
+		sigprocmask(SIG_BLOCK, &set, NULL);
+		int signo;
 		while (1) {
+			sigwait(&set, &signo);
+			printf("%d : signal arrived %d\n", getpid(), signo);
 			if (pThreadTbEnt[tid].pThread->exitCode == *(int*)*retval) 
 				break;
 		}
