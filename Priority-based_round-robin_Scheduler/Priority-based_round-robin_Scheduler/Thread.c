@@ -310,6 +310,7 @@ int thread_join(thread_t tid, void** retval) {
 		sigaddset(&set, SIGCHLD);
 		sigprocmask(SIG_BLOCK, &set, NULL);
 		int signo;
+		/* wait retval thread */
 		while (1) {
 			sigwait(&set, &signo);
 			printf("%d : signal arrived %d\n", getpid(), signo);
@@ -323,19 +324,18 @@ int thread_join(thread_t tid, void** retval) {
 		/* get thread from waiting queue */
 		if (DeleteThreadFromWaiting(pThread) == -1) return -1;
 
+		/* context switching */
 		if (pCurrentThead != NULL && pThread->priority < pCurrentThead->priority) {
-			printf("%d : 1\n", getpid());
 			InsertThreadToTail(pThread);
 			kill(getppid(), SIGUSR1);
 		}
+		/* context switching */
 		else if (pCurrentThead == NULL) {
-			printf("%d : 2\n", getpid());
 			InsertThreadToTail(pThread);
 			kill(getppid(), SIGUSR1);
 		}
 		/* move TCB to ready queue */
 		else {
-			printf("%d : 3\n", getpid());
 			pThread->status = THREAD_STATUS_READY;
 			InsertThreadToTail(pThread);
 			kill(getppid(), SIGSTOP);
@@ -356,7 +356,6 @@ int thread_exit(void* retval) {
 	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
 	InsertThreadIntoWaiting(pThreadTbEnt[tid].pThread);
 	pCurrentThead = NULL;
-	//kill(getppid(), SIGUSR2);
 	exit(0);
 
 	return 0;
