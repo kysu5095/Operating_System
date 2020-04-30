@@ -5,10 +5,6 @@
 #include "Scheduler.h"
 #include <stdio.h>
 #include <stdlib.h>
-//#define CLONE_FS      0x00000200
-//#define CLONE_FILES   0x00000400
-//#define CLONE_SIGHAND 0x00000800
-//#define CLONE_VM      0x00000100
 
 /*
  InsertThreadToTail      : ready queue의 우선순위에 맞는 테이블에 thread를 'tail'로 넣음    
