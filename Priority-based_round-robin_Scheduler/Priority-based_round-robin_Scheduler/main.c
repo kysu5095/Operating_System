@@ -20,13 +20,12 @@ int main(int argc, char* argv[]) {
 
 	Init();
 
-	TcNum = 1;
-	//printf("%d : TcNum : %d\n", getpid(), TcNum);
+	TcNum = atoi(argv[1]);
+
 
 	switch (TcNum)
 	{
 	case 1:
-		//printf("%d : call test function\n", getpid());
 		thread_create(&tid1, NULL, 0, (void*)TestCase1, 0);
 		break;
 	}

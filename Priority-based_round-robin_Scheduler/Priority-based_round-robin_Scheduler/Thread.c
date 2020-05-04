@@ -1,5 +1,5 @@
 #define _GNU_SOURCE
-#define STACK_SIZE    1024*64
+#define STACK_SIZE 1024*64
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
@@ -160,10 +160,10 @@ thread_t set_threadID(Thread* pThread) {
 
 /* create thread */
 int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*start_routine) (void *), void *arg){
-	void* stack;
-	stack = malloc(STACK_SIZE);
+	void* pStack;
+	pStack = malloc(STACK_SIZE);
 	int flags = SIGCHLD|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM;
-	pid_t pid = clone((void*)start_routine, (char*)stack + STACK_SIZE, flags, &arg);
+	pid_t pid = clone((void*)start_routine, (char*)pStack+STACK_SIZE, flags, &arg);
 	/* stop thread immediately */
 	kill(pid, SIGSTOP);
 
@@ -171,7 +171,7 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	Thread* pThread    = (Thread*)malloc(sizeof(Thread));
 	pThread->stackSize = STACK_SIZE;
 	pThread->stackAddr = *start_routine;
-	pThread->exitCode  = 0;
+	pThread->exitCode  = -1;
 	pThread->pid       = pid;
 	pThread->priority  = priority;
 	pThread->phNext    = NULL;
@@ -303,7 +303,6 @@ int thread_join(thread_t tid, void** retval) {
 		thread_t parent_tid = thread_self();
 		Thread* pThread = (Thread*)malloc(sizeof(Thread));
 		pThread = pThreadTbEnt[parent_tid].pThread;
-
 		/* get thread from waiting queue */
 		if (DeleteThreadFromWaiting(pThread) == -1) return -1;
 		/* context switching */
@@ -322,7 +321,7 @@ int thread_join(thread_t tid, void** retval) {
 			InsertThreadToTail(pThread);
 			kill(getppid(), SIGSTOP);
 		}
-		*(int*)*retval = pThreadTbEnt[tid].pThread->exitCode;
+		*retval = &pThreadTbEnt[tid].pThread->exitCode;
 		if (DeleteThreadFromWaiting(pThreadTbEnt[tid].pThread) == -1) return -1;
 		free(pThreadTbEnt[tid].pThread);
 		pThreadTbEnt[tid].bUsed = 0;
@@ -332,7 +331,6 @@ int thread_join(thread_t tid, void** retval) {
 
 /* thread terminate itself */
 int thread_exit(void* retval) {
-	printf("%d : exit\n", getpid());
 	thread_t tid = thread_self();
 	pThreadTbEnt[tid].pThread->exitCode = *(int*)retval;
 	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
