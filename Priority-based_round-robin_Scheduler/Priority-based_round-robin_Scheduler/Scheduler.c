@@ -145,11 +145,11 @@ thread_t get_threadID(const Thread* pThread) {
 }
 
 void RunScheduler(void) {
-	printf("%d : run scheduler\n", getpid());
+	//printf("%d : run scheduler\n", getpid());
 	/* reset alarm */
 	alarm(0);
 	//printf("=============BEFORE SCHEDULER==============\n");
-	//printq();
+	////printq();;
 	/* prepare scheduling */
 	if (pCurrentThead != NULL) 
 		kill(pCurrentThead->pid, SIGSTOP);
@@ -162,7 +162,7 @@ void RunScheduler(void) {
 			kill(pCurrentThead->pid, SIGCONT);
 		}
 		//printf("=============AFTER SCHEDULER==============\n");
-		//printq();
+		//printq();;
 		alarm(TIMESLICE);
 	}
 	else {
@@ -172,7 +172,7 @@ void RunScheduler(void) {
 			pCurrentThead->status = THREAD_STATUS_RUN;
 			kill(pCurrentThead->pid, SIGCONT);
 			//printf("=============AFTER SCHEDULER==============\n");
-			//printq();
+			//printq();;
 			alarm(TIMESLICE);
 		}
 		else {
@@ -181,7 +181,7 @@ void RunScheduler(void) {
 			if (nPriority > pCurrentThead->priority) {
 				kill(pCurrentThead->pid, SIGCONT);
 				//printf("=============AFTER SCHEDULER==============\n");
-				//printq();
+				//printq();;
 				alarm(TIMESLICE);
 			}
 			/* context_switching */
@@ -201,7 +201,7 @@ void RunScheduler(void) {
 
 /* context switching */
 void __ContextSwitch(int curpid, int newpid){
-	printf("%d : context switch %d -> %d\n", getpid(), curpid, newpid);
+	//printf("%d : context switch %d -> %d\n", getpid(), curpid, newpid);
 	/* stop current thread */
 	pThreadTbEnt[curpid].pThread->status = THREAD_STATUS_READY;
 	//kill(pThreadTbEnt[curpid].pThread->pid, SIGSTOP);
@@ -213,6 +213,6 @@ void __ContextSwitch(int curpid, int newpid){
 	pThreadTbEnt[newpid].pThread->status = THREAD_STATUS_RUN;
 	kill(pThreadTbEnt[newpid].pThread->pid, SIGCONT);
 	//printf("=============AFTER SCHEDULER==============\n");
-	//printq();
+	//printq();;
 	alarm(TIMESLICE);
 }

@@ -158,13 +158,6 @@ thread_t set_threadID(Thread* pThread) {
 	}
 }
 
-void exit_signal(int signo) {
-	printf("%d : signal arrived %d\n", getpid(), signo);
-	kill(getpid(), SIGCONT);
-	printf("%d: arrive myselfffffffffffff\n", getpid());
-	//signal(SIGCHLD, (void*)exit_signal);
-}
-
 /* create thread */
 int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*start_routine) (void *), void *arg){
 	void* stack;
@@ -293,14 +286,7 @@ int thread_join(thread_t tid, void** retval) {
 		InsertThreadIntoWaiting(pCurrentThead);
 		pCurrentThead = NULL;
 		kill(getppid(), SIGUSR1);
-		//signal(SIGCHLD, (void*)exit_signal);
-		//kill(getpid(), SIGSTOP);
-		/*sigset_t oldset;
-		sigemptyset(&oldset);
-		sigaddset(&oldset, SIGCHLD);
-		sigprocmask(SIG_UNBLOCK, &oldset, NULL);
-		signal(SIGCHLD, (void*)exit_signal);
-		kill(getpid(), SIGSTOP);*/
+
 		sigset_t set;
 		sigemptyset(&set);
 		sigaddset(&set, SIGCHLD);
@@ -309,9 +295,10 @@ int thread_join(thread_t tid, void** retval) {
 		/* wait retval thread */
 		while (1) {
 			sigwait(&set, &signo);
-			printf("%d : signal arrived %d\n", getpid(), signo);
-			if (pThreadTbEnt[tid].pThread->exitCode == *(int*)*retval) 
+			if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE)
 				break;
+			/*if (pThreadTbEnt[tid].pThread->exitCode == *(int*)*retval) 
+				break;*/
 		}
 		thread_t parent_tid = thread_self();
 		Thread* pThread = (Thread*)malloc(sizeof(Thread));
@@ -319,7 +306,6 @@ int thread_join(thread_t tid, void** retval) {
 
 		/* get thread from waiting queue */
 		if (DeleteThreadFromWaiting(pThread) == -1) return -1;
-
 		/* context switching */
 		if (pCurrentThead != NULL && pThread->priority < pCurrentThead->priority) {
 			InsertThreadToTail(pThread);

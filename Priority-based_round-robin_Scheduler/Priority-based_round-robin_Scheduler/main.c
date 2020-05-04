@@ -1,17 +1,38 @@
+
+#include<stdio.h>
+#include<stdlib.h>
+
+#include "test.h"
+
 #include "Init.h"
 #include "Scheduler.h"
 #include "Thread.h"
-#include "test.h"
 
-int main(void)
-{
-	thread_t tid;
-	int arg = 5;
+int main(int argc, char* argv[]) {
+
+	int TcNum;
+	thread_t tid1, tid2, tid3, tid4, tid5;
+
+	if (argc != 2) {
+		perror("Input TestCase Number!");
+		exit(0);
+	}
+
 	Init();
-	printf("%d : start program\n", getpid());
-	thread_create(&tid, NULL, 3, (void*)TestCase1, (void*)0);
+
+	TcNum = 1;
+	//printf("%d : TcNum : %d\n", getpid(), TcNum);
+
+	switch (TcNum)
+	{
+	case 1:
+		//printf("%d : call test function\n", getpid());
+		thread_create(&tid1, NULL, 0, (void*)TestCase1, 0);
+		break;
+	}
+
 	RunScheduler();
 	while (1) {}
+
+	return 0;
 }
-
-

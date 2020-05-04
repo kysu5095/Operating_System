@@ -1,70 +1,45 @@
+
 #include "test.h"
 
-int foo1(void* param) {
+void* Tc1ThreadProc(void* param)
+{
 	thread_t tid = 0;
-	int cnt = 0;
-	int exitCode = 1;
+	int count = 0;
+	int i;
+	int* retVal;
 	tid = thread_self();
-	cnt = 4;
-	while (cnt) {
-		printf("%d : foo1 exe my tid is (%d), my parent is (%d), cnt is (%d)\n", getpid(), tid, getppid(), cnt);
-		cnt--;
-		sleep(1);
-	}
-	thread_exit(&exitCode);
+	for (int i = 0; i < 5; i++) {
+		sleep(2);
+		printf("%d : Tc1ThreadProc: my thread id (%d), arg is (%d) index is (%d)\n", getpid(), (int)tid, *((int*)param), i);
+		count++;
+	}             /* sleep for 1 seconds */
+	printf("%d : awake!\n", getpid());
+	retVal = (int*)param;
+	thread_exit(retVal);
+	return NULL;
 }
 
-int foo2(void* param) {
-	thread_t tid = 0;
-	int cnt = 0;
-	int  exitCode = 2;
-	tid = thread_self();
-	cnt = 5;
-	while (cnt) {
-		printf("%d : foo2 exe my tid is (%d),  cnt is (%d)\n", getpid(), tid, cnt);
-		cnt--;
-		sleep(1);
-	}
-	thread_exit(&exitCode);
-}
 
-int foo3(void* param) {
-	thread_t tid = 0;
-	int cnt = 0;
-	tid = thread_self();
-	cnt = 5;
-	while (cnt) {
-		printf("%d : foo3 exe my tid is (%d),  cnt is (%d)\n", getpid(), tid, cnt);
-		cnt--;
-		sleep(1);
-	}
-}
+void TestCase1(void)
+{
+	thread_t tid[TOTAL_THREAD_NUM];
+	int result[TOTAL_THREAD_NUM];
 
-int foo4(void* param) {
-	thread_t tid = 0;
-	int cnt = 0;
-	tid = thread_self();
-		cnt = 5;
-	while (cnt) {
-		printf("%d : foo4 exe my tid is (%d),  cnt is (%d)\n", getpid(), tid, cnt);
-		cnt--;
-		sleep(1);
-	}
-}
+	int i = 0, i1 = 1, i2 = 2, i3 = 3, i4 = 4, i5 = 5;
 
-void TestCase1(void) {
-	printf("%d : run testcase\n", getpid());
-	int a = 10, b = 20, c = 30, d = 40;
-	int exitCode = 1;
-	void *tmp = &exitCode;
-	int exitCode2 = 2;
-	void *tmp2 = &exitCode2;
-	thread_t t1, t2, t3, t4;
-	thread_create(&t1, NULL, 4, (void*)foo1, &a);
-	thread_join(t1, &tmp);
-	thread_create(&t2, NULL, 4, (void*)foo2, &a);
-	//sleep(2);
-	//thread_join(t2, &tmp2);
-	thread_create(&t3, NULL, 4, (void*)foo3, &a);
-	while (1) {}
+	thread_create(&tid[0], NULL, 1, (void*)Tc1ThreadProc, &i1);
+	thread_create(&tid[1], NULL, 1, (void*)Tc1ThreadProc, &i2);
+	thread_create(&tid[2], NULL, 1, (void*)Tc1ThreadProc, &i3);
+	thread_create(&tid[3], NULL, 1, (void*)Tc1ThreadProc, (void*)&i4);
+	thread_create(&tid[4], NULL, 1, (void*)Tc1ThreadProc, (void*)&i5);
+
+	for (i = 0; i < TOTAL_THREAD_NUM; i++)
+	{
+		int* retVal;
+		thread_join(tid[i], (void **)&retVal);
+
+		printf("Thread [ %d ] is finish Return : [ %d ] \n", (int)tid[i], *retVal);
+	}
+
+	return;
 }
