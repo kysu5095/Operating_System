@@ -1,7 +1,7 @@
 
-#include "test.h"
+#include "TestCase2.h"
 
-void* Tc1ThreadProc(void* param)
+void* Tc2ThreadProc(void* param)
 {
 	thread_t tid = 0;
 	int count = 0;
@@ -19,18 +19,18 @@ void* Tc1ThreadProc(void* param)
 }
 
 
-void TestCase1(void)
+void TestCase2(void)
 {
 	thread_t tid[TOTAL_THREAD_NUM];
 	int result[TOTAL_THREAD_NUM];
 
 	int i = 0, i1 = 1, i2 = 2, i3 = 3, i4 = 4, i5 = 5;
 
-	thread_create(&tid[0], NULL, 1, (void*)Tc1ThreadProc, &i1);
-	thread_create(&tid[1], NULL, 1, (void*)Tc1ThreadProc, &i2);
-	thread_create(&tid[2], NULL, 1, (void*)Tc1ThreadProc, &i3);
-	thread_create(&tid[3], NULL, 1, (void*)Tc1ThreadProc, (void*)&i4);
-	thread_create(&tid[4], NULL, 1, (void*)Tc1ThreadProc, (void*)&i5);
+	thread_create(&tid[0], NULL, 1, (void*)Tc2ThreadProc, &i1);
+	thread_create(&tid[1], NULL, 1, (void*)Tc2ThreadProc, &i2);
+	thread_create(&tid[2], NULL, 1, (void*)Tc2ThreadProc, &i3);
+	thread_create(&tid[3], NULL, 1, (void*)Tc2ThreadProc, (void*)&i4);
+	thread_create(&tid[4], NULL, 1, (void*)Tc2ThreadProc, (void*)&i5);
 
 	for (i = 0; i < TOTAL_THREAD_NUM; i++)
 	{
