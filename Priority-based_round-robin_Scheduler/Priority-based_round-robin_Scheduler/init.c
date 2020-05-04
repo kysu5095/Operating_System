@@ -13,12 +13,12 @@ void Init(void) {
 	sigprocmask(SIG_BLOCK, &set, NULL);
 
 	/* running thread init */
-	pCurrentThead = NULL;
+	pCurrentThread = NULL;
 
 	/* thread table init */
 	for (int i = 0; i < MAX_THREAD_NUM; i++) {
-		pThreadTbEnt[i].bUsed = 0;
-		pThreadTbEnt[i].pThread = NULL;
+		pThreadTblEnt[i].bUsed = 0;
+		pThreadTblEnt[i].pThread = NULL;
 	}
 
 	/* ready queue init */

@@ -7,8 +7,8 @@ void printq() {
 	printf("%d : \n", getpid());
 	printf("===============pTHREAD ENT================\n");
 	for (thread_t i = 0; i < MAX_THREAD_NUM; i++) {
-		if (!pThreadTbEnt[i].bUsed)continue;
-		printf("%d | pid : %d(%p)    priority : %d\n", i, pThreadTbEnt[i].pThread->pid, pThreadTbEnt[i].pThread, pThreadTbEnt[i].pThread->priority);
+		if (!pThreadTblEnt[i].bUsed)continue;
+		printf("%d | pid : %d(%p)    priority : %d\n", i, pThreadTblEnt[i].pThread->pid, pThreadTblEnt[i].pThread, pThreadTblEnt[i].pThread->priority);
 	}
 	printf("===============READY QUEUE=================\n");
 	for (int i = 0; i < MAX_READYQUEUE_NUM; i++) {
@@ -31,8 +31,8 @@ void printq() {
 	}
 	printf("\n");
 	printf("================CPU QUEUE==================\n");
-	if (pCurrentThead != NULL)
-		printf("%d(%p)\n", pCurrentThead->pid, pCurrentThead);
+	if (pCurrentThread != NULL)
+		printf("%d(%p)\n", pCurrentThread->pid, pCurrentThread);
 	else
 		printf("cpu empty\n");
 	printf("=================EXE PID===================\n");
@@ -74,9 +74,9 @@ void InsertThreadToReady(Thread* pThread) {
 
 			/* update thread table */
 			for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
-				if (!pThreadTbEnt[id].bUsed) continue;
-				if (pThreadTbEnt[id].pThread->pid == tmp->pid) {
-					pThreadTbEnt[id].pThread = tmp;
+				if (!pThreadTblEnt[id].bUsed) continue;
+				if (pThreadTblEnt[id].pThread->pid == tmp->pid) {
+					pThreadTblEnt[id].pThread = tmp;
 					break;
 				}
 			}
@@ -136,30 +136,30 @@ BOOL is_empty() {
 /* get thread id from thread table */
 thread_t get_threadID(const Thread* pThread) {
 	for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
-		if (!pThreadTbEnt[id].bUsed) continue;
-		if (pThreadTbEnt[id].pThread == pThread)
+		if (!pThreadTblEnt[id].bUsed) continue;
+		if (pThreadTblEnt[id].pThread == pThread)
 			return id;
 	}
 
 	return -1;
 }
 
-void RunScheduler(void) {
+int RunScheduler(void) {
 	//printf("%d : run scheduler\n", getpid());
 	/* reset alarm */
 	alarm(0);
 	//printf("=============BEFORE SCHEDULER==============\n");
 	////printq();;
 	/* prepare scheduling */
-	if (pCurrentThead != NULL) 
-		kill(pCurrentThead->pid, SIGSTOP);
+	if (pCurrentThread != NULL) 
+		kill(pCurrentThread->pid, SIGSTOP);
 
 	/* ready queue is empty */
 	if (is_empty()) {
 		/* keep running current thread */
-		if (pCurrentThead != NULL) {
-			pCurrentThead->status = THREAD_STATUS_RUN;
-			kill(pCurrentThead->pid, SIGCONT);
+		if (pCurrentThread != NULL) {
+			pCurrentThread->status = THREAD_STATUS_RUN;
+			kill(pCurrentThread->pid, SIGCONT);
 		}
 		//printf("=============AFTER SCHEDULER==============\n");
 		//printq();;
@@ -167,10 +167,10 @@ void RunScheduler(void) {
 	}
 	else {
 		/* when the thread first enter the cpu */
-		if (pCurrentThead == NULL) {
-			pCurrentThead = GetThreadFromReady();
-			pCurrentThead->status = THREAD_STATUS_RUN;
-			kill(pCurrentThead->pid, SIGCONT);
+		if (pCurrentThread == NULL) {
+			pCurrentThread = GetThreadFromReady();
+			pCurrentThread->status = THREAD_STATUS_RUN;
+			kill(pCurrentThread->pid, SIGCONT);
 			//printf("=============AFTER SCHEDULER==============\n");
 			//printq();;
 			alarm(TIMESLICE);
@@ -178,8 +178,8 @@ void RunScheduler(void) {
 		else {
 			int nPriority = get_priorityFromReady();
 			/* no context_switching */
-			if (nPriority > pCurrentThead->priority) {
-				kill(pCurrentThead->pid, SIGCONT);
+			if (nPriority > pCurrentThread->priority) {
+				kill(pCurrentThread->pid, SIGCONT);
 				//printf("=============AFTER SCHEDULER==============\n");
 				//printq();;
 				alarm(TIMESLICE);
@@ -188,10 +188,10 @@ void RunScheduler(void) {
 			else {
 				Thread* nThread = (Thread*)malloc(sizeof(Thread));
 				nThread = GetThreadFromReady();
-				InsertThreadToReady(pCurrentThead);
+				InsertThreadToReady(pCurrentThread);
 
 				thread_t curtid, newtid;
-				curtid = get_threadID(pCurrentThead);
+				curtid = get_threadID(pCurrentThread);
 				newtid = get_threadID(nThread);
 				__ContextSwitch(curtid, newtid);
 			}
@@ -203,15 +203,15 @@ void RunScheduler(void) {
 void __ContextSwitch(int curpid, int newpid){
 	//printf("%d : context switch %d -> %d\n", getpid(), curpid, newpid);
 	/* stop current thread */
-	pThreadTbEnt[curpid].pThread->status = THREAD_STATUS_READY;
-	//kill(pThreadTbEnt[curpid].pThread->pid, SIGSTOP);
+	pThreadTblEnt[curpid].pThread->status = THREAD_STATUS_READY;
+	//kill(pThreadTblEnt[curpid].pThread->pid, SIGSTOP);
 
 	/* change cpu thread */
-	pCurrentThead = pThreadTbEnt[newpid].pThread;
+	pCurrentThread = pThreadTblEnt[newpid].pThread;
 
 	/* start new thread */
-	pThreadTbEnt[newpid].pThread->status = THREAD_STATUS_RUN;
-	kill(pThreadTbEnt[newpid].pThread->pid, SIGCONT);
+	pThreadTblEnt[newpid].pThread->status = THREAD_STATUS_RUN;
+	kill(pThreadTblEnt[newpid].pThread->pid, SIGCONT);
 	//printf("=============AFTER SCHEDULER==============\n");
 	//printq();;
 	alarm(TIMESLICE);

@@ -1,5 +1,4 @@
 #define _GNU_SOURCE
-#define STACK_SIZE 1024*64
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
@@ -55,9 +54,9 @@ void InsertThreadToTail(Thread* pThread) {
 
 			/* update thread table */
 			for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
-				if (!pThreadTbEnt[id].bUsed) continue;
-				if (pThreadTbEnt[id].pThread->pid == tmp->pid) {
-					pThreadTbEnt[id].pThread = tmp;
+				if (!pThreadTblEnt[id].bUsed) continue;
+				if (pThreadTblEnt[id].pThread->pid == tmp->pid) {
+					pThreadTblEnt[id].pThread = tmp;
 					break;
 				}
 			}
@@ -150,9 +149,9 @@ BOOL DeleteThreadFromWaiting(Thread* pThread) {
 /* get thread id from thread table */
 thread_t set_threadID(Thread* pThread) {
 	for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
-		if (!pThreadTbEnt[id].bUsed) {
-			pThreadTbEnt[id].bUsed = 1;
-			pThreadTbEnt[id].pThread = pThread;
+		if (!pThreadTblEnt[id].bUsed) {
+			pThreadTblEnt[id].bUsed = 1;
+			pThreadTblEnt[id].pThread = pThread;
 			return id;
 		}
 	}
@@ -180,9 +179,9 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	*thread			   = tid;
 
 	/* context switching */
-	if (pCurrentThead != NULL && priority < pCurrentThead->priority) {
-		pCurrentThead->status = THREAD_STATUS_READY;
-		InsertThreadToTail(pCurrentThead);
+	if (pCurrentThread != NULL && priority < pCurrentThread->priority) {
+		pCurrentThread->status = THREAD_STATUS_READY;
+		InsertThreadToTail(pCurrentThread);
 		pThread->status = THREAD_STATUS_RUN;
 		kill(getppid(), SIGUSR1);
 	}
@@ -199,12 +198,12 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 /* note : don't suspend oneself!!!! */
 int thread_suspend(thread_t tid){
 	/* no such thread */
-	if (!pThreadTbEnt[tid].bUsed) return -1;
+	if (!pThreadTblEnt[tid].bUsed) return -1;
 	/* thread status is not ready */
-	if (pThreadTbEnt[tid].pThread->status != THREAD_STATUS_READY) return -1;
-	if (DeleteThreadFromReady(pThreadTbEnt[tid].pThread)) {
-		pThreadTbEnt[tid].pThread->status = THREAD_STATUS_WAIT;
-		InsertThreadIntoWaiting(pThreadTbEnt[tid].pThread);
+	if (pThreadTblEnt[tid].pThread->status != THREAD_STATUS_READY) return -1;
+	if (DeleteThreadFromReady(pThreadTblEnt[tid].pThread)) {
+		pThreadTblEnt[tid].pThread->status = THREAD_STATUS_WAIT;
+		InsertThreadIntoWaiting(pThreadTblEnt[tid].pThread);
 		return 0;
 	}
 	else
@@ -214,35 +213,35 @@ int thread_suspend(thread_t tid){
 /* kill thread */
 /* note : don't kill oneself!!!! */
 int thread_cancel(thread_t tid){
-	if (!pThreadTbEnt[tid].bUsed) return -1;
-	pid_t pid = pThreadTbEnt[tid].pThread->pid;
+	if (!pThreadTblEnt[tid].bUsed) return -1;
+	pid_t pid = pThreadTblEnt[tid].pThread->pid;
 	/* kill thread */
 	kill(pid, SIGKILL);
-	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_READY)
-		DeleteThreadFromReady(pThreadTbEnt[tid].pThread);
-	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_WAIT)
-		DeleteThreadFromWaiting(pThreadTbEnt[tid].pThread);
-	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
+	if (pThreadTblEnt[tid].pThread->status == THREAD_STATUS_READY)
+		DeleteThreadFromReady(pThreadTblEnt[tid].pThread);
+	if (pThreadTblEnt[tid].pThread->status == THREAD_STATUS_WAIT)
+		DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread);
+	pThreadTblEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
 	
-	free(pThreadTbEnt[tid].pThread);
-	pThreadTbEnt[tid].bUsed = 0;
-	pThreadTbEnt[tid].pThread = NULL;
+	free(pThreadTblEnt[tid].pThread);
+	pThreadTblEnt[tid].bUsed = 0;
+	pThreadTblEnt[tid].pThread = NULL;
 
 	return 0;
 }
 
 /* resume thread */
 int thread_resume(thread_t tid){
-	if (!pThreadTbEnt[tid].bUsed) return -1;
+	if (!pThreadTblEnt[tid].bUsed) return -1;
 	Thread* pThread = (Thread*)malloc(sizeof(Thread));
-	pThread = pThreadTbEnt[tid].pThread;
+	pThread = pThreadTblEnt[tid].pThread;
 
 	/* get thread from waiting queue */
 	if (DeleteThreadFromWaiting(pThread) == -1) return -1;
 
-	if (pCurrentThead != NULL && pThread->priority < pCurrentThead->priority) {
-		//pCurrentThead->status = THREAD_STATUS_READY;
-		//InsertThreadToTail(pCurrentThead);
+	if (pCurrentThread != NULL && pThread->priority < pCurrentThread->priority) {
+		//pCurrentThread->status = THREAD_STATUS_READY;
+		//InsertThreadToTail(pCurrentThread);
 		//pThread->status = THREAD_STATUS_RUN;
 		InsertThreadToTail(pThread);
 		kill(getppid(), SIGUSR1);
@@ -260,8 +259,8 @@ int thread_resume(thread_t tid){
 thread_t thread_self(){
 	pid_t pid = getpid();
 	for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
-		if (!pThreadTbEnt[id].bUsed) continue;
-		if (pThreadTbEnt[id].pThread->pid == pid)
+		if (!pThreadTblEnt[id].bUsed) continue;
+		if (pThreadTblEnt[id].pThread->pid == pid)
 			return id;
 	}
 
@@ -270,21 +269,21 @@ thread_t thread_self(){
 
 /* wait specific child  thread */
 int thread_join(thread_t tid, void** retval) {
-	if (!pThreadTbEnt[tid].bUsed) return -1;
+	if (!pThreadTblEnt[tid].bUsed) return -1;
 
 	/* child thread status is already zombie */
-	if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE) {
-		*(int*)*retval = pThreadTbEnt[tid].pThread->exitCode;
-		if (DeleteThreadFromWaiting(pThreadTbEnt[tid].pThread) == -1) return -1;
-		free(pThreadTbEnt[tid].pThread);
-		pThreadTbEnt[tid].bUsed = 0;
-		pThreadTbEnt[tid].pThread = NULL;
+	if (pThreadTblEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE) {
+		*(int*)*retval = pThreadTblEnt[tid].pThread->exitCode;
+		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == -1) return -1;
+		free(pThreadTblEnt[tid].pThread);
+		pThreadTblEnt[tid].bUsed = 0;
+		pThreadTblEnt[tid].pThread = NULL;
 		return 1;
 	}
 	else {
-		pCurrentThead->status = THREAD_STATUS_WAIT;
-		InsertThreadIntoWaiting(pCurrentThead);
-		pCurrentThead = NULL;
+		pCurrentThread->status = THREAD_STATUS_WAIT;
+		InsertThreadIntoWaiting(pCurrentThread);
+		pCurrentThread = NULL;
 		kill(getppid(), SIGUSR1);
 
 		sigset_t set;
@@ -295,23 +294,21 @@ int thread_join(thread_t tid, void** retval) {
 		/* wait retval thread */
 		while (1) {
 			sigwait(&set, &signo);
-			if (pThreadTbEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE)
+			if (pThreadTblEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE)
 				break;
-			/*if (pThreadTbEnt[tid].pThread->exitCode == *(int*)*retval) 
-				break;*/
 		}
 		thread_t parent_tid = thread_self();
 		Thread* pThread = (Thread*)malloc(sizeof(Thread));
-		pThread = pThreadTbEnt[parent_tid].pThread;
+		pThread = pThreadTblEnt[parent_tid].pThread;
 		/* get thread from waiting queue */
 		if (DeleteThreadFromWaiting(pThread) == -1) return -1;
 		/* context switching */
-		if (pCurrentThead != NULL && pThread->priority < pCurrentThead->priority) {
+		if (pCurrentThread != NULL && pThread->priority < pCurrentThread->priority) {
 			InsertThreadToTail(pThread);
 			kill(getppid(), SIGUSR1);
 		}
 		/* context switching */
-		else if (pCurrentThead == NULL) {
+		else if (pCurrentThread == NULL) {
 			InsertThreadToTail(pThread);
 			kill(getppid(), SIGUSR1);
 		}
@@ -321,21 +318,21 @@ int thread_join(thread_t tid, void** retval) {
 			InsertThreadToTail(pThread);
 			kill(getppid(), SIGSTOP);
 		}
-		*retval = &pThreadTbEnt[tid].pThread->exitCode;
-		if (DeleteThreadFromWaiting(pThreadTbEnt[tid].pThread) == -1) return -1;
-		free(pThreadTbEnt[tid].pThread);
-		pThreadTbEnt[tid].bUsed = 0;
-		pThreadTbEnt[tid].pThread = NULL;
+		*retval = &pThreadTblEnt[tid].pThread->exitCode;
+		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == -1) return -1;
+		free(pThreadTblEnt[tid].pThread);
+		pThreadTblEnt[tid].bUsed = 0;
+		pThreadTblEnt[tid].pThread = NULL;
 	}
 }
 
 /* thread terminate itself */
 int thread_exit(void* retval) {
 	thread_t tid = thread_self();
-	pThreadTbEnt[tid].pThread->exitCode = *(int*)retval;
-	pThreadTbEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
-	InsertThreadIntoWaiting(pThreadTbEnt[tid].pThread);
-	pCurrentThead = NULL;
+	pThreadTblEnt[tid].pThread->exitCode = *(int*)retval;
+	pThreadTblEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
+	InsertThreadIntoWaiting(pThreadTblEnt[tid].pThread);
+	pCurrentThread = NULL;
 	exit(0);
 
 	return 0;
