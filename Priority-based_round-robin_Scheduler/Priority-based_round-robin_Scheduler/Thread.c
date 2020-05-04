@@ -163,7 +163,7 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	void* pStack;
 	pStack = malloc(STACK_SIZE);
 	int flags = SIGCHLD|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM;
-	pid_t pid = clone((void*)start_routine, (char*)pStack+STACK_SIZE, flags, &arg);
+	pid_t pid = clone((void*)start_routine, (char*)pStack+STACK_SIZE, flags, arg);
 	/* stop thread immediately */
 	kill(pid, SIGSTOP);
 
