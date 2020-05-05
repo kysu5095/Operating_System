@@ -37,10 +37,10 @@ void TestCase2(void)
 			assert(0);
 		}
 
-		Thread *temp = pWaitingQueueHead->phNext;
+		Thread *temp = pWaitingQueueHead;
 
 		printf("current waiting queue : ");
-		for (; temp != pWaitingQueueTail; temp = temp->phNext) {
+		for (; temp != NULL; temp = temp->phNext) {
 			printf(" %d", temp->pid);
 			if (temp->status != 2)
 			{
@@ -93,10 +93,10 @@ void TestCase2(void)
 			assert(0);
 		}
 
-		Thread *temp = pWaitingQueueHead->phNext;
+		Thread *temp = pWaitingQueueHead;
 
 		printf("current waiting queue : ");
-		for (; temp != pWaitingQueueTail; temp = temp->phNext) {
+		for (; temp != NULL; temp = temp->phNext) {
 			printf(" %d", temp->pid);
 			if (temp->status != 2)
 			{
