@@ -8,7 +8,7 @@
 #include <errno.h>
 #include "Thread.h"
 
-#define TOTAL_THREAD_NUM (4)
+#define TOTAL_THREAD_NUM (3)
 void* Tc2ThreadProc(void* param);
 void TestCase2(void);
 
