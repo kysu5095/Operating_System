@@ -122,25 +122,95 @@ BOOL DeleteThreadFromReady(Thread* pThread) {
 
 /* insert thread to **tail** of waiting queue */
 void InsertThreadIntoWaiting(Thread* pThread) {
-	pWaitingQueueTail->phPrev->phNext = pThread;
-	pThread->phPrev = pWaitingQueueTail->phPrev;
-	pThread->phNext = pWaitingQueueTail;
-	pWaitingQueueTail->phPrev = pThread;
+	// when waiting queue empty
+	if (pWaitingQueueHead == NULL) {
+		pWaitingQueueHead = pThread;
+		pWaitingQueueHead->phPrev = NULL;
+		pWaitingQueueHead->phNext = NULL;
+	}
+	else {
+		// when waiting queue have only head
+		if (pWaitingQueueTail == NULL) {
+			pWaitingQueueTail = pThread;
+			pWaitingQueueTail->phNext = NULL;
+			pWaitingQueueTail->phPrev = pWaitingQueueHead;
+			pWaitingQueueHead->phNext = pWaitingQueueTail;
+		}
+		else {
+			Thread* tmp = (Thread*)malloc(sizeof(Thread));
+			tmp->stackSize = pWaitingQueueTail->stackSize;
+			tmp->stackAddr = pWaitingQueueTail->stackAddr;
+			tmp->status = pWaitingQueueTail->status;
+			tmp->exitCode = pWaitingQueueTail->exitCode;
+			tmp->pid = pWaitingQueueTail->pid;
+			tmp->priority = pWaitingQueueTail->priority;
+			tmp->phPrev = pWaitingQueueTail->phPrev;
+			pWaitingQueueTail->phPrev->phNext = tmp;
+			pWaitingQueueTail = pThread;
+			pWaitingQueueTail->phPrev = tmp;
+			pWaitingQueueTail->phNext = NULL;
+			tmp->phNext = pWaitingQueueTail;
+
+			/* update thread table */
+			for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
+				if (!pThreadTblEnt[id].bUsed) continue;
+				if (pThreadTblEnt[id].pThread->pid == tmp->pid) {
+					pThreadTblEnt[id].pThread = tmp;
+					break;
+				}
+			}
+		}
+	}
 }
 
 /* delete thread form waiting queue */
 BOOL DeleteThreadFromWaiting(Thread* pThread) {
-	if (pWaitingQueueTail->phPrev == pWaitingQueueHead) 
-		return -1;
-
-	Thread* tmp = pWaitingQueueHead->phNext;
-	while (1) {
+	Thread *tmp = (Thread*)malloc(sizeof(Thread));
+	tmp = pWaitingQueueHead;
+	while (tmp != NULL) {
 		if (tmp == pThread) {
-			tmp->phPrev->phNext = tmp->phNext;
-			tmp->phNext->phPrev = tmp->phPrev;
+			// When delete head
+			if (tmp == pWaitingQueueHead) {
+				// When waiting queue size is 1
+				if (tmp->phNext == NULL) {
+					pWaitingQueueHead = NULL;
+					pWaitingQueueTail = NULL;
+				}
+				else {
+					// When waiting queue size is 2
+					if (tmp->phNext == pWaitingQueueTail) {
+						pWaitingQueueHead = pWaitingQueueTail;
+						pWaitingQueueHead->phNext = NULL;
+						pWaitingQueueHead->phPrev = NULL;
+						pWaitingQueueTail = NULL;
+					}
+					else {
+						pWaitingQueueHead = pWaitingQueueHead->phNext;
+						pWaitingQueueHead->phPrev = NULL;
+					}
+				}
+			}
+			else {
+				// When delete tail
+				if (tmp == pWaitingQueueTail) {
+					// When waiting queue size is 2
+					if (tmp->phPrev == pWaitingQueueHead) {
+						pWaitingQueueHead->phNext = NULL;
+						pWaitingQueueTail = NULL;
+					}
+					else {
+						pWaitingQueueTail = pWaitingQueueTail->phPrev;
+						pWaitingQueueTail->phNext = NULL;
+					}
+				}
+				else {
+					tmp->phPrev->phNext = tmp->phNext;
+					tmp->phNext->phPrev = tmp->phPrev;
+				}
+			}
 			return 1;
 		}
-		if (tmp->phNext == pWaitingQueueTail) break;
+		if (tmp->phNext == NULL) break;
 		tmp = tmp->phNext;
 	}
 	return 0;
@@ -274,7 +344,7 @@ int thread_join(thread_t tid, void** retval) {
 	/* child thread status is already zombie */
 	if (pThreadTblEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE) {
 		*(int*)*retval = pThreadTblEnt[tid].pThread->exitCode;
-		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == -1) return -1;
+		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
 		free(pThreadTblEnt[tid].pThread);
 		pThreadTblEnt[tid].bUsed = 0;
 		pThreadTblEnt[tid].pThread = NULL;
@@ -301,7 +371,7 @@ int thread_join(thread_t tid, void** retval) {
 		Thread* pThread = (Thread*)malloc(sizeof(Thread));
 		pThread = pThreadTblEnt[parent_tid].pThread;
 		/* get thread from waiting queue */
-		if (DeleteThreadFromWaiting(pThread) == -1) return -1;
+		if (DeleteThreadFromWaiting(pThread) == 0) return -1;
 		/* context switching */
 		if (pCurrentThread != NULL && pThread->priority < pCurrentThread->priority) {
 			InsertThreadToTail(pThread);
@@ -319,7 +389,7 @@ int thread_join(thread_t tid, void** retval) {
 			kill(getppid(), SIGSTOP);
 		}
 		*retval = &pThreadTblEnt[tid].pThread->exitCode;
-		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == -1) return -1;
+		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
 		free(pThreadTblEnt[tid].pThread);
 		pThreadTblEnt[tid].bUsed = 0;
 		pThreadTblEnt[tid].pThread = NULL;

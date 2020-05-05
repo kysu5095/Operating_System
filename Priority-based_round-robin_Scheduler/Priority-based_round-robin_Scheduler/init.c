@@ -29,10 +29,12 @@ void Init(void) {
 	}
 
 	/* waiting queue init */
-	pWaitingQueueHead = (Thread*)malloc(sizeof(Thread));
+	pWaitingQueueHead = NULL;
+	pWaitingQueueTail = NULL;
+	/*pWaitingQueueHead = (Thread*)malloc(sizeof(Thread));
 	pWaitingQueueTail = (Thread*)malloc(sizeof(Thread));
 	pWaitingQueueHead->phNext = pWaitingQueueTail;
 	pWaitingQueueHead->phPrev = NULL;
 	pWaitingQueueTail->phNext = NULL;
-	pWaitingQueueTail->phPrev = pWaitingQueueHead;
+	pWaitingQueueTail->phPrev = pWaitingQueueHead;*/
 }

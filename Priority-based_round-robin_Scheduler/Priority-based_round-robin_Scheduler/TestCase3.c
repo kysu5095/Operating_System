@@ -9,7 +9,7 @@ void* Tc3ThreadProc(void* param)
 	tid = thread_self();
 	for(int i=0;i<5;i++){
 		sleep(2);
-		printf("Tc1ThreadProc: my thread id (%d), arg is (%d)\n", (int)tid, *((int*)param));
+		printf("Tc3ThreadProc: my thread id (%d), arg is (%d)\n", (int)tid, *((int*)param));
 		count++;
 	}
 	retVal = (int*)param;
