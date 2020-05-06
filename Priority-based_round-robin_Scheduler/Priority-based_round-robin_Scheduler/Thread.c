@@ -213,7 +213,7 @@ BOOL DeleteThreadFromWaiting(Thread* pThread) {
 		if (tmp->phNext == NULL) break;
 		tmp = tmp->phNext;
 	}
-	return 0;
+	return -1;
 }
 
 /* get thread id from thread table */
@@ -314,6 +314,7 @@ int thread_resume(thread_t tid){
 		//InsertThreadToTail(pCurrentThread);
 		//pThread->status = THREAD_STATUS_RUN;
 		InsertThreadToTail(pThread);
+		printf("%d : priority : %d resume\n", getpid(), pThread->priority);
 		kill(getppid(), SIGUSR1);
 	}
 	/* move TCB to ready queue */

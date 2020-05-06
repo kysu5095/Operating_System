@@ -2,6 +2,8 @@
 #include "Thread.h"
 #include "Scheduler.h"
 
+#include <stdio.h>
+
 /* insert thread to **Tail** of ready queue */
 void InsertThreadToReady(Thread* pThread) {
 	int priority = pThread->priority;
@@ -109,6 +111,7 @@ thread_t get_threadID(const Thread* pThread) {
 int RunScheduler(void) {
 	/* reset alarm */
 	alarm(0);
+	printf("%d : runscheduler\n", getpid());
 
 	/* prepare scheduling */
 	if (pCurrentThread != NULL) 
