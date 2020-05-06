@@ -12,11 +12,11 @@ void* Tc4ThreadProc(void* param)
 
 	int i;
 	for(i=0;i<5;i++){
+		sleep(2);
 		printf("%d : Tc4ThreadProc: my thread id (%d), arg is (%d)\n", getpid(), (int)tid, currentNum);
 		if(i==1&&currentNum!=1){
-			thread_resume(tidArray[currentNum]/2);
+			thread_resume(tidArray[currentNum/2]);
 		}
-		sleep(2);
 	}
 	retVal = (int*)param;
 	thread_exit(retVal);
