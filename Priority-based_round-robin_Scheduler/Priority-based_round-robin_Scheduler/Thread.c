@@ -310,11 +310,7 @@ int thread_resume(thread_t tid){
 	if (DeleteThreadFromWaiting(pThread) == -1) return -1;
 
 	if (pCurrentThread != NULL && pThread->priority < pCurrentThread->priority) {
-		//pCurrentThread->status = THREAD_STATUS_READY;
-		//InsertThreadToTail(pCurrentThread);
-		//pThread->status = THREAD_STATUS_RUN;
 		InsertThreadToTail(pThread);
-		printf("%d : priority : %d resume\n", getpid(), pThread->priority);
 		kill(getppid(), SIGUSR1);
 	}
 	/* move TCB to ready queue */

@@ -97,6 +97,14 @@ BOOL is_empty() {
 	return 1;
 }
 
+/* make sure thread table is empty */
+BOOL is_threadTbl_empty() {
+	for (thread_t id = 0; id < MAX_THREAD_NUM; id++)
+		if (pThreadTblEnt[id].bUsed) return 0;
+
+	return 1;
+}
+
 /* get thread id from thread table */
 thread_t get_threadID(const Thread* pThread) {
 	for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
@@ -111,7 +119,15 @@ thread_t get_threadID(const Thread* pThread) {
 int RunScheduler(void) {
 	/* reset alarm */
 	alarm(0);
-	printf("%d : runscheduler\n", getpid());
+	if (!is_threadTbl_empty()) {
+		for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
+			if (!pThreadTblEnt[id].bUsed) continue;
+			if (pThreadTblEnt[id].pThread->pid == (int)getpid()) {
+				kill(getppid(), SIGUSR1);
+				return 0;
+			}
+		}
+	}
 
 	/* prepare scheduling */
 	if (pCurrentThread != NULL) 

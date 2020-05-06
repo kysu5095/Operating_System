@@ -39,7 +39,6 @@ int main(int argc, char* argv[]){
 			thread_create(&tid4,NULL,0,(void*)TestCase4,0);
 			break;
 	}
-	printf("%d : main ppid = %d\n", getpid(), getppid());
 	RunScheduler();
 
 	while(1){}

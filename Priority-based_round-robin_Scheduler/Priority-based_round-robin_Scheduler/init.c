@@ -6,7 +6,6 @@ void Init(void) {
 	/* register signal handler */
 	signal(SIGALRM, (void*)RunScheduler);
 	signal(SIGUSR1, (void*)RunScheduler);
-	//signal(SIGCHLD, SIG_IGN);
 	sigset_t set;
 	sigemptyset(&set);
 	sigaddset(&set, SIGCHLD);
@@ -31,10 +30,4 @@ void Init(void) {
 	/* waiting queue init */
 	pWaitingQueueHead = NULL;
 	pWaitingQueueTail = NULL;
-	/*pWaitingQueueHead = (Thread*)malloc(sizeof(Thread));
-	pWaitingQueueTail = (Thread*)malloc(sizeof(Thread));
-	pWaitingQueueHead->phNext = pWaitingQueueTail;
-	pWaitingQueueHead->phPrev = NULL;
-	pWaitingQueueTail->phNext = NULL;
-	pWaitingQueueTail->phPrev = pWaitingQueueHead;*/
 }
