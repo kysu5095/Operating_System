@@ -348,9 +348,11 @@ int thread_join(thread_t tid, void** retval) {
 		return 1;
 	}
 	else {
-		pCurrentThread->status = THREAD_STATUS_WAIT;
-		InsertThreadIntoWaiting(pCurrentThread);
-		pCurrentThread = NULL;
+		if (pCurrentThread != NULL) {
+			pCurrentThread->status = THREAD_STATUS_WAIT;
+			InsertThreadIntoWaiting(pCurrentThread);
+			pCurrentThread = NULL;
+		}
 		kill(getppid(), SIGUSR1);
 
 		sigset_t set;
