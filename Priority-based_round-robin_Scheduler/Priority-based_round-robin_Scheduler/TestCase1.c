@@ -11,7 +11,7 @@ void* Tc1ThreadProc(void* param)
 
 	for(int i=0;i<5;i++){
 		sleep(2);
-		printf("Tc1ThreadProc: my thread id (%d), arg is (%d)\n", (int)tid, *((int*)param));
+		printf("%d : Tc1ThreadProc: my thread id (%d), arg is (%d)\n", getpid(), (int)tid, *((int*)param));
 		count++;
 	}
 
@@ -38,7 +38,7 @@ void TestCase1(void)
 		int* retVal;
 		thread_join(tid[i],(void **)&retVal);
 
-		printf("Thread [ %d ] is finish Return : [ %d ] \n",(int)tid[i], *retVal);
+		printf("%d : Thread [ %d ] is finish Return : [ %d ] \n",getpid(), (int)tid[i], *retVal);
 	}
 
 	return ;
