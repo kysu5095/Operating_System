@@ -23,7 +23,6 @@ int main(int argc, char* argv[]){
 	Init();
 
 	TcNum=atoi(argv[1]);
-
 	switch(TcNum)
 	{
 		case 1:
