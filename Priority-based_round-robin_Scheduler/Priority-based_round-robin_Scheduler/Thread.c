@@ -251,27 +251,22 @@ void sigchld_handler(int signo) {
 	if (signo == SIGCHLD) {
 		if (pThreadTblEnt[waiting_tid].pThread->status == THREAD_STATUS_ZOMBIE) {
 			//alarm(0);
-			printf("%d : zombie\n", getpid());
 		}
 		else {
-			printf("%d : no\n", getpid());
-			signal(SIGCHLD, (void*)sigchld_handler);
 			sigset_t set;
-			sigfillset(&set);
-			sigdelset(&set, SIGCHLD);
-			sigprocmask(SIG_BLOCK, &set, NULL);
+			sigemptyset(&set);
+			sigaddset(&set, SIGCHLD);
+			sigprocmask(SIG_UNBLOCK, &set, NULL);
+			signal(SIGCHLD, (void*)sigchld_handler);
 			pause();
 		}
 	}
 	else {
-		//alarm(0);
-		//kill(getppid(), SIGUSR1);
-		printf("%d : except\n", getpid());
-		signal(SIGCHLD, (void*)sigchld_handler);
 		sigset_t set;
-		sigfillset(&set);
-		sigdelset(&set, SIGCHLD);
-		sigprocmask(SIG_SETMASK, &set, NULL);
+		sigemptyset(&set);
+		sigaddset(&set, SIGCHLD);
+		sigprocmask(SIG_UNBLOCK, &set, NULL);
+		signal(SIGCHLD, (void*)sigchld_handler);
 		pause();
 	}
 }
@@ -367,24 +362,9 @@ int thread_resume(thread_t tid){
 	printf("%d : resume\n", getpid());
 	/* context switching */
 	if (pCurrentThread != NULL && pThread->priority < pCurrentThread->priority) {
-		/*printf("=====Thread table\n");
-		for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
-			if (pThreadTblEnt[id].bUsed == 0) continue;
-			printf("%d : %d(%p)\n", id, pThreadTblEnt[id].pThread->pid, pThreadTblEnt[id].pThread);
-		}
-		printf("%d : pcur : %d(%p)\n", getpid(), pCurrentThread->pid, pCurrentThread);
-		printf("%d : pthread : %d(%p)\n", getpid(), pThread->pid , pThread);
-		print_table();*/
-
 		pThread->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pThread);
-		//pCurrentThread->status = THREAD_STATUS_READY;
-		//InsertThreadToTail(pCurrentThread);
-		/*printf("================\n");*/
-		//print_table();
-		/*printf("go\n");
-		kill(getppid(), SIGCHLD);*/
-		//kill(getppid(), SIGUSR1);
+		kill(getppid(), SIGCHLD);
 	}
 	/* context switching */
 	else if (pCurrentThread == NULL) {
@@ -432,49 +412,19 @@ int thread_join(thread_t tid, void** retval) {
 			InsertThreadIntoWaiting(pCurrentThread);
 			pCurrentThread = NULL;
 		}
-		//kill(getppid(), SIGUSR1);
-		printf("%d : join %d\n", getpid(), tid);
-		//print_table();
-		//printf("1\n");
-		signal(SIGCHLD, (void*)sigchld_handler);
 		waiting_tid = tid;
 		kill(getppid(), SIGUSR1);
 		sigset_t set;
 		sigemptyset(&set);
 		sigaddset(&set, SIGCHLD);
-		sigprocmask(SIG_BLOCK, &set, NULL);
-		//sigemptyset(&set);
-		//sigaddset(&set, SIGCHLD);
-		//sigaddset(&set, SIGALRM);
-		//sigprocmask(SIG_SETMASK, &set, NULL);
-		//signal(SIGCHLD, sigchld_handler);
-		//signal(SIGALRM, sigchld_handler);
-		//printf("2\n");
+		sigprocmask(SIG_UNBLOCK, &set, NULL);
+		signal(SIGCHLD, (void*)sigchld_handler);
 		pause();
-		/**retval = &pThreadTblEnt[tid].pThread->exitCode;
-		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
-		free(pThreadTblEnt[tid].pThread);
-		pThreadTblEnt[tid].bUsed = 0;
-		pThreadTblEnt[tid].pThread = NULL;*/
-		//sigset_t set;
-		//sigemptyset(&set);
-		//sigaddset(&set, SIGCHLD);
-		//sigprocmask(SIG_BLOCK, &set, NULL);
-		//int signo;
-		///* wait retval thread */
-		//while (1) {
-		//	sigwait(&set, &signo);
-		//	if (pThreadTblEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE)
-		//		break;
-		//}
-		printf("%d : join 3\n", getpid());
 		thread_t parent_tid = thread_self();
 		Thread* pThread = (Thread*)malloc(sizeof(Thread));
 		pThread = pThreadTblEnt[parent_tid].pThread;
 		/* get thread from waiting queue */
 		if (DeleteThreadFromWaiting(pThread) == 0) return -1;
-		printf("join 4\n");
-		print_table();
 		/* context switching */
 		if (pCurrentThread != NULL && pThread->priority < pCurrentThread->priority) {
 			printf("join pcur : %d,  pthread : %d(%p)\n", pCurrentThread->pid, pThread->pid, pThread);
@@ -483,13 +433,8 @@ int thread_join(thread_t tid, void** retval) {
 		}
 		/* context switching */
 		else if (pCurrentThread == NULL) {
-			print_table();
 			pCurrentThread = pThread;
 			pCurrentThread->status = THREAD_STATUS_RUN;
-			printf("%d : join 6\n", getpid());
-			//InsertThreadToTail(pThread);
-			//kill(getppid(), SIGUSR1);
-			//RunScheduler();
 		}
 		/* move TCB to ready queue */
 		else {
@@ -498,7 +443,6 @@ int thread_join(thread_t tid, void** retval) {
 			printf("join 7\n");
 			kill(getpid(), SIGSTOP);
 		}
-		printf("join 8\n");
 		*retval = &pThreadTblEnt[tid].pThread->exitCode;
 		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
 		free(pThreadTblEnt[tid].pThread);
@@ -514,10 +458,7 @@ int thread_exit(void* retval) {
 	pThreadTblEnt[tid].pThread->exitCode = *(int*)retval;
 	pThreadTblEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
 	InsertThreadIntoWaiting(pThreadTblEnt[tid].pThread);
-	printf("DIE    %d : pcur : %d(%p)\n", getpid(), pCurrentThread->pid, pCurrentThread);
 	pCurrentThread = NULL;
-	//printf("%d : 9\n", getpid());
-	kill(getppid(), SIGUSR1);
 	exit(0);
 
 	return 0;
