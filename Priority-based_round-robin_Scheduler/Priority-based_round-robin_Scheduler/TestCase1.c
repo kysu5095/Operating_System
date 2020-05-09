@@ -33,6 +33,13 @@ void TestCase1(void)
 	thread_create(&tid[3], NULL, 1, (void*)Tc1ThreadProc,(void*) &i4);	
 	thread_create(&tid[4], NULL, 1, (void*)Tc1ThreadProc,(void*) &i5);
 
+	printf("==================TID TABLE==================\n");
+	for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
+		if (pThreadTblEnt[id].bUsed == 0) continue;
+		printf("[TID %d] : PID = %d(%p), PRIORITY = %d\n", id, pThreadTblEnt[id].pThread->pid, pThreadTblEnt[id].pThread, pThreadTblEnt[id].pThread->priority);
+	}
+
+
 	for(i=0;i<TOTAL_THREAD_NUM;i++)
 	{
 		int* retVal;
