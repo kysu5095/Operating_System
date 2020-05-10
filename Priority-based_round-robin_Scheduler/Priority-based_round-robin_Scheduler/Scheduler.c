@@ -40,7 +40,7 @@ void InsertThreadToReady(Thread* pThread) {
 			for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
 				if (pThreadTblEnt[id].bUsed == 0) continue;
 				if (pThreadTblEnt[id].pThread->pid == tmp->pid) {
-					free(pThreadTblEnt[id].pThread);
+					//free(pThreadTblEnt[id].pThread);
 					pThreadTblEnt[id].pThread = tmp;
 					break;
 				}
@@ -109,17 +109,8 @@ thread_t get_threadID(const Thread* pThread) {
 }
 
 int RunScheduler(void) {
-	/*for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
-		if (pThreadTblEnt[id].bUsed == 0) continue;
-		if (pThreadTblEnt[id].pThread->pid == (int)getpid()) {
-			kill(getppid(), SIGUSR1);
-			return 0;
-		}
-	}*/
-	//printf("%d : run\n", getpid());
 	/* prepare scheduling */
 	if (pCurrentThread != NULL) {
-		//printf("%d : kill %d(%p)\n", getpid(), pCurrentThread->pid, pCurrentThread);
 		kill(pCurrentThread->pid, SIGSTOP);
 	}
 	/* ready queue is empty */
@@ -128,7 +119,6 @@ int RunScheduler(void) {
 		if (pCurrentThread != NULL) {
 			pCurrentThread->status = THREAD_STATUS_RUN;
 			kill(pCurrentThread->pid, SIGCONT);
-			//printf("maybe here...? %d(%p)\n", pCurrentThread->pid, pCurrentThread);
 		}
 		alarm(TIMESLICE);
 	}
@@ -138,7 +128,6 @@ int RunScheduler(void) {
 			pCurrentThread = GetThreadFromReady();
 			pCurrentThread->status = THREAD_STATUS_RUN;
 			kill(pCurrentThread->pid, SIGCONT);
-			//printf("%d : first in %d(%p)\n", getpid(), pCurrentThread->pid, pCurrentThread);
 			alarm(TIMESLICE);
 		}
 		else {
@@ -146,35 +135,23 @@ int RunScheduler(void) {
 			/* no context_switching */
 			if (nPriority > pCurrentThread->priority) {
 				kill(pCurrentThread->pid, SIGCONT);
-				//printf("no context switch %d(%p)\n", pCurrentThread->pid, pCurrentThread);
 				alarm(TIMESLICE);
 			}
 			/* context_switching */
 			else {
-				//printf("switching\n");
 				Thread* nThread = (Thread*)malloc(sizeof(Thread));
 				nThread = GetThreadFromReady();
-
 				InsertThreadToReady(pCurrentThread);
 
 
-				int curtid = -1, newtid = -1, idx = 0;
-				while (1) {
-					if ((curtid != -1 && newtid != -1) || idx == MAX_THREAD_NUM) break;
-					if (pCurrentThread == pThreadTblEnt[idx].pThread) curtid = idx;
-					if (nThread == pThreadTblEnt[idx].pThread) newtid = idx;
-					idx++;
+				int curtid = -1, newtid = -1;
+				for(int idx = 0; idx < MAX_THREAD_NUM; idx++) {
+					if ((curtid != -1 && newtid != -1)) break;
+					if (pThreadTblEnt[idx].bUsed == 0) continue;
+					if (pCurrentThread->pid == pThreadTblEnt[idx].pThread->pid) curtid = idx;
+					if (nThread->pid == pThreadTblEnt[idx].pThread->pid) newtid = idx;
 				}
 
-
-				if (nThread == NULL) {
-					//printf("NULL THREAD\n");
-				}
-				//InsertThreadToReady(pCurrentThread);
-				
-				/*thread_t curtid, newtid;
-				curtid = get_threadID(pCurrentThread);
-				newtid = get_threadID(nThread);*/
 				__ContextSwitch(curtid, newtid);
 			}
 		}
@@ -186,13 +163,11 @@ int RunScheduler(void) {
 void __ContextSwitch(int curpid, int newpid){
 	/* stop current thread */
 	pThreadTblEnt[curpid].pThread->status = THREAD_STATUS_READY;
-	//kill(pThreadTblEnt[curpid].pThread->pid, SIGSTOP);
 
 	/* change cpu thread */
 	pCurrentThread = pThreadTblEnt[newpid].pThread;
 
-	/* start new thread */
-	pThreadTblEnt[newpid].pThread->status = THREAD_STATUS_RUN;
+	/* start new thread */		pThreadTblEnt[newpid].pThread->status = THREAD_STATUS_RUN;
 	kill(pThreadTblEnt[newpid].pThread->pid, SIGCONT);
 	alarm(TIMESLICE);
 }

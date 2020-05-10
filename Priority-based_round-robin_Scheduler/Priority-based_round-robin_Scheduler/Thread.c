@@ -6,18 +6,18 @@
 #include <stdlib.h>
 
 /*
- InsertThreadToTail      : ready queueÀÇ ¿ì¼±¼øÀ§¿¡ ¸Â´Â Å×ÀÌºí¿¡ thread¸¦ 'tail'·Î ³ÖÀ½    
- DeleteThreadFromReady   : ready queue¿¡¼­ ÇØ´çÇÏ´Â thread »èÁ¦                           
- InsertThreadIntoWaiting : waiting queue¿¡ thread¸¦ 'tail'·Î ³ÖÀ½                         
- DeleteThreadFromWaiting : waiting queue¿¡ ÇØ´çÇÏ´Â thread »èÁ¦                           
- set_threadID            : thread table¿¡¼­ threadÀÇ index¸¦ ¹ÝÈ¯                         
- thread_create           : thread »ý¼º ÈÄ ready queue·Î »ðÀÔ or context scheduling        
- thread_suspend          : ÇØ´çÇÏ´Â thread Á¤Áö >> waiting queue·Î º¸³¿                    
- thread_cancel           : ÇØ´çÇÏ´Â thread Á×ÀÓ >> ¸Þ¸ð¸® ÇØÁ¦ ÈÄ thread table¿¡¼­µµ »èÁ¦  
- thread_rsume            : ÇØ´çÇÏ´Â thread ´Ù½Ã ½ÃÀÛ >> ready queue or context scheduling  
- thread_self             : ÀÌ ÇÔ¼ö¸¦ È£ÃâÇÑ threadÀÇ tid¸¦ ¹ÝÈ¯     
- thread_join			 : tid¹ø ¾²·¹µå°¡ Á¾·áÇÒ ¶§±îÁö ±â´Ù¸²
- thread_exit			 : ÀÚ±â ÀÚ½ÅÀ» Á¾·áÇÏ´Â ÇÔ¼ö
+ InsertThreadToTail      : ready queueï¿½ï¿½ ï¿½ì¼±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Â´ï¿½ ï¿½ï¿½ï¿½Ìºï¿½ï¿½ï¿½ threadï¿½ï¿½ 'tail'ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½    
+ DeleteThreadFromReady   : ready queueï¿½ï¿½ï¿½ï¿½ ï¿½Ø´ï¿½ï¿½Ï´ï¿½ thread ï¿½ï¿½ï¿½ï¿½                           
+ InsertThreadIntoWaiting : waiting queueï¿½ï¿½ threadï¿½ï¿½ 'tail'ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½                         
+ DeleteThreadFromWaiting : waiting queueï¿½ï¿½ ï¿½Ø´ï¿½ï¿½Ï´ï¿½ thread ï¿½ï¿½ï¿½ï¿½                           
+ set_threadID            : thread tableï¿½ï¿½ï¿½ï¿½ threadï¿½ï¿½ indexï¿½ï¿½ ï¿½ï¿½È¯                         
+ thread_create           : thread ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ready queueï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ or context scheduling        
+ thread_suspend          : ï¿½Ø´ï¿½ï¿½Ï´ï¿½ thread ï¿½ï¿½ï¿½ï¿½ >> waiting queueï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½                    
+ thread_cancel           : ï¿½Ø´ï¿½ï¿½Ï´ï¿½ thread ï¿½ï¿½ï¿½ï¿½ >> ï¿½Þ¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ thread tableï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½  
+ thread_rsume            : ï¿½Ø´ï¿½ï¿½Ï´ï¿½ thread ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½ >> ready queue or context scheduling  
+ thread_self             : ï¿½ï¿½ ï¿½Ô¼ï¿½ï¿½ï¿½ È£ï¿½ï¿½ï¿½ï¿½ threadï¿½ï¿½ tidï¿½ï¿½ ï¿½ï¿½È¯     
+ thread_join			 : tidï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½å°¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ù¸ï¿½
+ thread_exit			 : ï¿½Ú±ï¿½ ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Ô¼ï¿½
 */
 
 void print_table() {
@@ -75,7 +75,7 @@ void InsertThreadToTail(Thread* pThread) {
 			for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
 				if (pThreadTblEnt[id].bUsed == 0) continue;
 				if (pThreadTblEnt[id].pThread->pid == tmp->pid) {
-					free(pThreadTblEnt[id].pThread);
+					//free(pThreadTblEnt[id].pThread);
 					pThreadTblEnt[id].pThread = tmp;
 					break;
 				}
@@ -175,7 +175,7 @@ void InsertThreadIntoWaiting(Thread* pThread) {
 			for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
 				if (pThreadTblEnt[id].bUsed == 0) continue;
 				if (pThreadTblEnt[id].pThread->pid == tmp->pid) {
-					free(pThreadTblEnt[id].pThread);
+					//free(pThreadTblEnt[id].pThread);
 					pThreadTblEnt[id].pThread = tmp;
 					break;
 				}
@@ -252,47 +252,27 @@ thread_t set_threadID(Thread* pThread) {
 thread_t waiting_tid;
 void sigchld_handler(int signo) {
 	if (signo == SIGCHLD) {
-		if (pThreadTblEnt[waiting_tid].pThread->status == THREAD_STATUS_ZOMBIE) {
-			//alarm(0);
-			//printf("%d : signal arrive\n", getpid());
-			thread_t parent_tid = thread_self();
-			Thread* pThread = (Thread*)malloc(sizeof(Thread));
-			pThread = pThreadTblEnt[parent_tid].pThread;
-			/* get thread from waiting queue */
-			if (DeleteThreadFromWaiting(pThread) == 0) return;
-			/* context switching */
-			if (pCurrentThread != NULL && pThread->priority < pCurrentThread->priority) {
-				//printf("%d : CPU : %d(%p)\n", getpid(), pCurrentThread->pid, pCurrentThread);
-				InsertThreadToTail(pThread);
-				kill(getppid(), SIGUSR1);
-			}
-			/* context switching */
-			else if (pCurrentThread == NULL) {
+		for(int idx = 0; idx < MAX_THREAD_NUM; idx++){
+			if(pThreadTblEnt[idx].bUsed == 0) continue;
+			if(pThreadTblEnt[idx].pThread->status == THREAD_STATUS_ZOMBIE){
+				thread_t parent_tid = thread_self();
+				Thread* pThread = (Thread*)malloc(sizeof(Thread));
+				pThread = pThreadTblEnt[parent_tid].pThread;
+				/* get thread from waiting queue */
+				if (DeleteThreadFromWaiting(pThread) == 0) return;
 				pCurrentThread = pThread;
-				//printf("%d : NULL CPU : %d(%p)\n", getpid(), pCurrentThread->pid, pCurrentThread);
-				pCurrentThread->status = THREAD_STATUS_RUN;
+				pCurrentThread->status = THREAD_STATUS_RUN;	
+				return;
 			}
-			/* move TCB to ready queue */
-			else {
-				//printf("%d : insert ready queue\n", getpid());
-				pThread->status = THREAD_STATUS_READY;
-				InsertThreadToTail(pThread);
-				kill(getpid(), SIGSTOP);
-			}
-			//printf("%d : signal finish\n", getpid());
 		}
-		else {
-			//printf("=====================================%d\n", signo);
-			sigset_t set;
-			sigemptyset(&set);
-			sigaddset(&set, SIGCHLD);
-			sigprocmask(SIG_UNBLOCK, &set, NULL);
-			signal(SIGCHLD, (void*)sigchld_handler);
-			pause();
-		}
+		sigset_t set;
+		sigemptyset(&set);
+		sigaddset(&set, SIGCHLD);
+		sigprocmask(SIG_UNBLOCK, &set, NULL);
+		signal(SIGCHLD, (void*)sigchld_handler);
 	}
 	else {
-		//printf("**********************************\n");
+		//printf("no sigchld\n");
 		sigset_t set;
 		sigemptyset(&set);
 		sigaddset(&set, SIGCHLD);
@@ -322,6 +302,7 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	pThread->phPrev    = NULL;
 	/*thread_t tid	   = set_threadID(pThread);
 	*thread			   = tid;*/
+	*thread = 1;
 	for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
 		if (pThreadTblEnt[id].bUsed == 0) {
 			pThreadTblEnt[id].bUsed = 1;
@@ -374,7 +355,6 @@ int thread_cancel(thread_t tid){
 	if (pThreadTblEnt[tid].pThread->status == THREAD_STATUS_WAIT)
 		DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread);
 	pThreadTblEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
-	
 	free(pThreadTblEnt[tid].pThread);
 	pThreadTblEnt[tid].bUsed = 0;
 	pThreadTblEnt[tid].pThread = NULL;
@@ -393,19 +373,16 @@ int thread_resume(thread_t tid){
 	if (pCurrentThread != NULL && pThread->priority < pCurrentThread->priority) {
 		pThread->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pThread);
-		printf("%d : resume 1\n", getpid());
 		kill(getppid(), SIGCHLD);
 	}
 	/* context switching */
 	else if (pCurrentThread == NULL) {
 		InsertThreadToTail(pThread);
-		printf("%d : resume 2\n", getpid());
 		kill(getppid(), SIGUSR1);
 	}
 	/* move TCB to ready queue */
 	else {
 		pThread->status = THREAD_STATUS_READY;
-		printf("%d : resume 3\n", getpid());
 		InsertThreadToTail(pThread);
 	}
 
@@ -437,27 +414,27 @@ int thread_join(thread_t tid, void** retval) {
 		return 1;
 	}
 	else {
-		//printf("%d : join\n",getpid());
+		alarm(0);
 		if (pCurrentThread != NULL) {
 			pCurrentThread->status = THREAD_STATUS_WAIT;
-			//printf("%d : %d(%p)\n", getpid(), pCurrentThread->pid, pCurrentThread);
 			InsertThreadIntoWaiting(pCurrentThread);
 			pCurrentThread = NULL;
 		}
 		waiting_tid = tid;
-		kill(getppid(), SIGUSR1);
+		/* signal mask */
+		signal(SIGCHLD, (void*)sigchld_handler);
 		sigset_t set;
 		sigemptyset(&set);
 		sigaddset(&set, SIGCHLD);
 		sigprocmask(SIG_UNBLOCK, &set, NULL);
-		signal(SIGCHLD, (void*)sigchld_handler);
-		//printf("before\n");
-		pause();
-		//printf("after\n");
-		sigset_t set2;
-		sigfillset(&set2);
-		sigprocmask(SIG_BLOCK, &set2, NULL);
-		//printf("%d : parent awake\n", getpid());
+		kill(getppid(), SIGUSR1);
+		while(1){
+			pause();
+			if(pThreadTblEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE)
+				break;
+		}
+
+		/* store exitCode */
 		*retval = &pThreadTblEnt[tid].pThread->exitCode;
 		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
 		free(pThreadTblEnt[tid].pThread);
@@ -468,13 +445,10 @@ int thread_join(thread_t tid, void** retval) {
 
 /* thread terminate itself */
 int thread_exit(void* retval) {
-	//alarm(0);
 	thread_t tid = thread_self();
 	pThreadTblEnt[tid].pThread->exitCode = *(int*)retval;
 	pThreadTblEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
 	InsertThreadIntoWaiting(pThreadTblEnt[tid].pThread);
-	pCurrentThread = NULL;
-	//printf("%d : child die\n", getpid());
 	exit(0);
 
 	return 0;
