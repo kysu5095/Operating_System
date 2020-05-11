@@ -6,11 +6,7 @@ void Init(void) {
 	/* register signal handler */
 	signal(SIGALRM, (void*)RunScheduler);
 	signal(SIGUSR1, (void*)RunScheduler);
-	//signal(SIGCHLD, SIG_IGN);
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set, SIGCHLD);
-	sigprocmask(SIG_BLOCK, &set, NULL);
+	signal(SIGCHLD, SIG_IGN);
 
 	/* running thread init */
 	pCurrentThread = NULL;

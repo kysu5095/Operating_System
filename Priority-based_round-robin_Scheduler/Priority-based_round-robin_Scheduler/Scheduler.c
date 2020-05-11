@@ -2,8 +2,6 @@
 #include "Thread.h"
 #include "Scheduler.h"
 
-#include <stdio.h>
-
 /* insert thread to **Tail** of ready queue */
 void InsertThreadToReady(Thread* pThread) {
 	int priority = pThread->priority;
@@ -132,27 +130,22 @@ int RunScheduler(void) {
 		}
 		else {
 			int nPriority = (int)get_priorityFromReady();
-			/* no context_switching */
+			/* no scheduling */
 			if (nPriority > pCurrentThread->priority) {
 				kill(pCurrentThread->pid, SIGCONT);
 				alarm(TIMESLICE);
 			}
-			/* context_switching */
+			/* scheduling */
 			else {
-				Thread* nThread = (Thread*)malloc(sizeof(Thread));
-				nThread = GetThreadFromReady();
+				/* insert cpu thread to ready queue */
+				pCurrentThread->status = THREAD_STATUS_READY;
 				InsertThreadToReady(pCurrentThread);
 
-
-				int curtid = -1, newtid = -1;
-				for(int idx = 0; idx < MAX_THREAD_NUM; idx++) {
-					if ((curtid != -1 && newtid != -1)) break;
-					if (pThreadTblEnt[idx].bUsed == 0) continue;
-					if (pCurrentThread->pid == pThreadTblEnt[idx].pThread->pid) curtid = idx;
-					if (nThread->pid == pThreadTblEnt[idx].pThread->pid) newtid = idx;
-				}
-
-				__ContextSwitch(curtid, newtid);
+				/* get new cpu thread from ready queue */
+				Thread* nThread = (Thread*)malloc(sizeof(Thread));
+				nThread = GetThreadFromReady();
+				
+				__ContextSwitch((int)pCurrentThread->pid, (int)nThread->pid);
 			}
 		}
 	}
@@ -161,13 +154,15 @@ int RunScheduler(void) {
 
 /* context switching */
 void __ContextSwitch(int curpid, int newpid){
-	/* stop current thread */
-	pThreadTblEnt[curpid].pThread->status = THREAD_STATUS_READY;
-
 	/* change cpu thread */
-	pCurrentThread = pThreadTblEnt[newpid].pThread;
-
-	/* start new thread */		pThreadTblEnt[newpid].pThread->status = THREAD_STATUS_RUN;
-	kill(pThreadTblEnt[newpid].pThread->pid, SIGCONT);
+	for(thread_t id = 0; id < MAX_THREAD_NUM; id++){
+		if(pThreadTblEnt[id].bUsed == 0) continue;
+		if(pThreadTblEnt[id].pThread->pid == newpid){
+			pCurrentThread = pThreadTblEnt[id].pThread;
+			pCurrentThread->status = THREAD_STATUS_RUN;
+			break;
+		}
+	}
 	alarm(TIMESLICE);
+	kill(pCurrentThread->pid, SIGCONT);
 }
