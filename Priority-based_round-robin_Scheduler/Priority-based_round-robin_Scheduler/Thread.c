@@ -329,11 +329,6 @@ int thread_resume(thread_t tid){
 		alarm(TIMESLICE);
 		kill(suspend_pid, SIGSTOP);
 	}
-	/* context switching */
-	else if (pCurrentThread == NULL) {
-		InsertThreadToTail(pThread);
-		kill(getppid(), SIGUSR1);
-	}
 	/* move TCB to ready queue */
 	else {
 		pThread->status = THREAD_STATUS_READY;
@@ -362,18 +357,37 @@ void sigchld_handler(int signo) {
 
 /* wait	specific child  thread */
 int thread_join(thread_t tid, void** retval) {
-	if (!pThreadTblEnt[tid].bUsed) return -1;
-	/* child thread status is already zombie */
-	if (pThreadTblEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE) {
-		/* store exitCode */
-		*(int*)*retval = pThreadTblEnt[tid].pThread->exitCode;
-		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
-		free(pThreadTblEnt[tid].pThread);
-		pThreadTblEnt[tid].bUsed = 0;
-		pThreadTblEnt[tid].pThread = NULL;
-		return 1;
-	}
-	else {
+	 if (!pThreadTblEnt[tid].bUsed) return -1;
+	// /* child thread status is already zombie */
+	// if (pThreadTblEnt[tid].pThread->status == THREAD_STATUS_ZOMBIE) {
+	// 	/* store exitCode */
+	// 	*(int*)*retval = pThreadTblEnt[tid].pThread->exitCode;
+	// 	if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
+	// 	free(pThreadTblEnt[tid].pThread);
+	// 	pThreadTblEnt[tid].bUsed = 0;
+	// 	pThreadTblEnt[tid].pThread = NULL;
+	// 	return 1;
+	// }
+	// else {
+	// 	if (pCurrentThread != NULL) {
+	// 		pCurrentThread->status = THREAD_STATUS_WAIT;
+	// 		InsertThreadIntoWaiting(pCurrentThread);
+	// 		pCurrentThread = NULL;
+	// 	}
+	// 	/* only receive exit signal of SIGCHLD */
+	// 	sigaction(SIGCHLD, &(struct sigaction){.sa_handler = sigchld_handler, .sa_flags = SA_NOCLDSTOP}, NULL);
+	// 	kill(getppid(), SIGUSR1);
+	// 	pause();
+
+	// 	/* store exitCode */
+	// 	*retval = &pThreadTblEnt[tid].pThread->exitCode;
+	// 	if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
+	// 	free(pThreadTblEnt[tid].pThread);
+	// 	pThreadTblEnt[tid].bUsed = 0;
+	// 	pThreadTblEnt[tid].pThread = NULL;
+	// }
+	/* when child thread is zombie */
+	if (pThreadTblEnt[tid].pThread->status != THREAD_STATUS_ZOMBIE) {
 		if (pCurrentThread != NULL) {
 			pCurrentThread->status = THREAD_STATUS_WAIT;
 			InsertThreadIntoWaiting(pCurrentThread);
@@ -383,14 +397,13 @@ int thread_join(thread_t tid, void** retval) {
 		sigaction(SIGCHLD, &(struct sigaction){.sa_handler = sigchld_handler, .sa_flags = SA_NOCLDSTOP}, NULL);
 		kill(getppid(), SIGUSR1);
 		pause();
-
-		/* store exitCode */
-		*retval = &pThreadTblEnt[tid].pThread->exitCode;
-		if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
-		free(pThreadTblEnt[tid].pThread);
-		pThreadTblEnt[tid].bUsed = 0;
-		pThreadTblEnt[tid].pThread = NULL;
 	}
+	/* store exitCode */
+	*retval = &pThreadTblEnt[tid].pThread->exitCode;
+	if (DeleteThreadFromWaiting(pThreadTblEnt[tid].pThread) == 0) return -1;
+	free(pThreadTblEnt[tid].pThread);
+	pThreadTblEnt[tid].bUsed = 0;
+	pThreadTblEnt[tid].pThread = NULL;
 }
 
 /* thread terminate itself */
