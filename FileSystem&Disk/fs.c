@@ -61,10 +61,11 @@ void CreateFileSystem() {
     DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
     strcpy(dir[0].name, ".");
     dir[0].inodeNum = 0;
-    DevWriteBlock(7, (char*)dir);
+    DevWriteBlock(block_idx, (char*)dir);
 
     /* initial file system information block */
     pFileSysInfo = (FileSysInfo*)malloc(sizeof(BLOCK_SIZE));
+    memset(pFileSysInfo, 0, sizeof(BLOCK_SIZE));
     pFileSysInfo->blocks            = BLOCK_SIZE;
     pFileSysInfo->rootInodeNum      = 0;
     pFileSysInfo->diskCapacity      = FS_DISK_CAPACITY;
@@ -88,6 +89,7 @@ void CreateFileSystem() {
 
     /* setting inode */
     Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    memset(pInode, 0, sizeof(Inode));
     GetInode(0, pInode);
     pInode->allocBlocks = block_idx;
     pInode->size = BLOCK_SIZE;
