@@ -15,21 +15,21 @@ void FileSysInit(void);
 
 /* File System Initialize */ 
 void FileSysInit(void){
-    char* file_sys_info_block = (char*)malloc(BLOCK_SIZE);
-    char* inode_bytemap_block = (char*)malloc(BLOCK_SIZE);
-    char* block_bytemap_block = (char*)malloc(BLOCK_SIZE);
-    char* inodelist_1_block   = (char*)malloc(BLOCK_SIZE);
-    char* inodelist_2_block   = (char*)malloc(BLOCK_SIZE);
-    char* inodelist_3_block   = (char*)malloc(BLOCK_SIZE);
-    char* inodelist_4_block   = (char*)malloc(BLOCK_SIZE);
+    char* file_sys_info_block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    char* inode_bytemap_block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    char* block_bytemap_block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    char* inodelist_1_block   = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    char* inodelist_2_block   = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    char* inodelist_3_block   = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    char* inodelist_4_block   = (char*)malloc(sizeof(char) * BLOCK_SIZE);
 
-    memset(file_sys_info_block, 0, sizeof(BLOCK_SIZE));
-    memset(inode_bytemap_block, 0, sizeof(BLOCK_SIZE));
-    memset(block_bytemap_block, 0, sizeof(BLOCK_SIZE));
-    memset(inodelist_1_block,   0, sizeof(BLOCK_SIZE));
-    memset(inodelist_2_block,   0, sizeof(BLOCK_SIZE));
-    memset(inodelist_3_block,   0, sizeof(BLOCK_SIZE));
-    memset(inodelist_4_block,   0, sizeof(BLOCK_SIZE));
+    memset(file_sys_info_block, '0', sizeof(char) * BLOCK_SIZE);
+    memset(inode_bytemap_block, '0', sizeof(char) * BLOCK_SIZE);
+    memset(block_bytemap_block, '0', sizeof(char) * BLOCK_SIZE);
+    memset(inodelist_1_block,   '0', sizeof(char) * BLOCK_SIZE);
+    memset(inodelist_2_block,   '0', sizeof(char) * BLOCK_SIZE);
+    memset(inodelist_3_block,   '0', sizeof(char) * BLOCK_SIZE);
+    memset(inodelist_4_block,   '0', sizeof(char) * BLOCK_SIZE);
 
     // /* file system information block */
     // pFileSysInfo = (FileSysInfo*)malloc(sizeof(FileSysInfo));
