@@ -1,5 +1,5 @@
-exefile : initialize.o disk.o fs.o fs_internal.o main.o
-	gcc -o exefile initialize.o disk.o fs.o fs_internal.o main.o
+exe : initialize.o disk.o fs.o fs_internal.o main.o
+	gcc -o exe initialize.o disk.o fs.o fs_internal.o main.o
 initialize.o : initialize.c
 	gcc -c -o initialize.o initialize.c
 disk.o : disk.c
@@ -11,4 +11,4 @@ fs_internal.o : fs_internal.c
 main.o : main.c
 	gcc -c -o main.o main.c
 clean :
-	rm *.o exefile MY_DISK
+	rm *.o exe MY_DISK
