@@ -82,9 +82,12 @@ void CreateFileSystem() {
 
     /* allocate DirEntry array to block size */
     DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
-    memset(dir, 0, sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
     strcpy(dir[0].name, ".");
     dir[0].inodeNum = 0;
+    for(int i = 1; i < NUM_OF_DIRENT_PER_BLOCK; i++){
+        strcpy(dir[i].name, "null");
+        dir[0].inodeNum = 0;
+    }
     DevWriteBlock(block_idx, (char*)dir);
 
     /* initial file system information block */
