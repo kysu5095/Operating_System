@@ -46,12 +46,44 @@ int   EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dir
 
 
 void	CreateFileSystem() {
-    int block_idx = GetFreeBlockNum();
-    int inode_idx = GetFreeInodeNum();
+    int block_idx, inode_idx;
+    if((block_idx = GetFreeBlockNum()) == -1){
+        perror("CreateFileSystem : block_idx error");
+        exit(0);
+    }
+    if((inode_idx = GetFreeInodeNum()) == -1){
+        perror("CreateFileSystem : inode_idx error");
+        exit(0);
+    }
     DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
     strcpy(dir[0].name, ".");
     dir[0].inodeNum = 0;
     DevWriteBlock(7, (char*)dir);
+
+    pFileSysInfo = (FileSysInfo*)malloc(sizeof(BLOCK_SIZE));
+    // /* file system information block */
+    // pFileSysInfo = (FileSysInfo*)malloc(sizeof(FileSysInfo));
+    // pFileSysInfo->blocks            = BLOCK_SIZE;
+    // pFileSysInfo->rootInodeNum      = 0;
+    // pFileSysInfo->diskCapacity      = FS_DISK_CAPACITY;
+    // pFileSysInfo->numAllocBlocks    = 7;
+    // pFileSysInfo->numFreeBlocks     = BLOCK_SIZE - 7;    
+    // pFileSysInfo->numAllocInodes    = 1;
+    // pFileSysInfo->blockBytemapBlock = BLOCK_BYTEMAP_BLOCK_NUM;
+    // pFileSysInfo->inodeBytemapBlock = INODE_BYTEMAP_BLOCK_NUM;
+    // pFileSysInfo->inodeListBlock    = INODELIST_BLOCK_FIRST;
+    // pFileSysInfo->dataRegionBlock   = 7;
+    // memcpy(file_sys_info_block, pFileSysInfo, BLOCK_SIZE);
+
+    // /* inode bytemap block */
+    // char inode_bytemap[MAX_FD_ENTRY_MAX];
+    // memset(inode_bytemap, 0, sizeof(inode_bytemap));
+    // inode_bytemap[0] = '1';
+    // memcpy(inode_bytemap_block, inode_bytemap, BLOCK_SIZE);
+
+    // /* block bytemap block */
+    // char block_bytemap[MAX_FD_ENTRY_MAX];
+    // memset(block_bytemap, 0, sizeof(block_bytemap));
 }
 
 
