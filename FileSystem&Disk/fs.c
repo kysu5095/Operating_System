@@ -4,48 +4,49 @@
 #include "disk.h"
 #include "fs.h"
 
-int		CreateFile(const char* szFileName) {
+int	CreateFile(const char* szFileName) {
 
 }
 
-int		OpenFile(const char* szFileName) {
-
-}
-
-
-int		WriteFile(int fileDesc, char* pBuffer, int length) {
-
-}
-
-int		ReadFile(int fileDesc, char* pBuffer, int length) {
+int	OpenFile(const char* szFileName) {
 
 }
 
 
-int		CloseFile(int fileDesc) {
+int	WriteFile(int fileDesc, char* pBuffer, int length) {
 
 }
 
-int		RemoveFile(const char* szFileName) {
-
-}
-
-
-int		MakeDir(const char* szDirName) {
+int	ReadFile(int fileDesc, char* pBuffer, int length) {
 
 }
 
 
-int		RemoveDir(const char* szDirName) {
+int	CloseFile(int fileDesc) {
 
 }
 
-int   EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dirEntrys) {
+int	RemoveFile(const char* szFileName) {
 
 }
 
 
-void	CreateFileSystem() {
+int	MakeDir(const char* szDirName) {
+
+}
+
+
+int	RemoveDir(const char* szDirName) {
+
+}
+
+int EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dirEntrys) {
+
+}
+
+
+void CreateFileSystem() {
+    /* get block, inode index */
     int block_idx, inode_idx;
     if((block_idx = GetFreeBlockNum()) == -1){
         perror("CreateFileSystem : block_idx error");
@@ -55,25 +56,31 @@ void	CreateFileSystem() {
         perror("CreateFileSystem : inode_idx error");
         exit(0);
     }
+
+    /* allocate DirEntry array to block size */
     DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
     strcpy(dir[0].name, ".");
     dir[0].inodeNum = 0;
     DevWriteBlock(7, (char*)dir);
 
+    /* initial file system information block */
     pFileSysInfo = (FileSysInfo*)malloc(sizeof(BLOCK_SIZE));
-    // /* file system information block */
-    // pFileSysInfo = (FileSysInfo*)malloc(sizeof(FileSysInfo));
-    // pFileSysInfo->blocks            = BLOCK_SIZE;
-    // pFileSysInfo->rootInodeNum      = 0;
-    // pFileSysInfo->diskCapacity      = FS_DISK_CAPACITY;
-    // pFileSysInfo->numAllocBlocks    = 7;
-    // pFileSysInfo->numFreeBlocks     = BLOCK_SIZE - 7;    
-    // pFileSysInfo->numAllocInodes    = 1;
-    // pFileSysInfo->blockBytemapBlock = BLOCK_BYTEMAP_BLOCK_NUM;
-    // pFileSysInfo->inodeBytemapBlock = INODE_BYTEMAP_BLOCK_NUM;
-    // pFileSysInfo->inodeListBlock    = INODELIST_BLOCK_FIRST;
-    // pFileSysInfo->dataRegionBlock   = 7;
-    // memcpy(file_sys_info_block, pFileSysInfo, BLOCK_SIZE);
+    pFileSysInfo->blocks            = BLOCK_SIZE;
+    pFileSysInfo->rootInodeNum      = 0;
+    pFileSysInfo->diskCapacity      = FS_DISK_CAPACITY;
+    pFileSysInfo->numAllocBlocks    = 7;
+    pFileSysInfo->numFreeBlocks     = BLOCK_SIZE - 7;    
+    pFileSysInfo->numAllocInodes    = 0;
+    pFileSysInfo->blockBytemapBlock = BLOCK_BYTEMAP_BLOCK_NUM;
+    pFileSysInfo->inodeBytemapBlock = INODE_BYTEMAP_BLOCK_NUM;
+    pFileSysInfo->inodeListBlock    = INODELIST_BLOCK_FIRST;
+    pFileSysInfo->dataRegionBlock   = 7;
+
+    /* setting file system block */
+    pFileSysInfo->numAllocBlocks++;
+    pFileSysInfo->numFreeBlocks--;
+    pFileSysInfo->numAllocInodes++;
+    DevWriteBlock(0, (char*)pFileSysInfo);
 
     // /* inode bytemap block */
     // char inode_bytemap[MAX_FD_ENTRY_MAX];
@@ -87,11 +94,11 @@ void	CreateFileSystem() {
 }
 
 
-void	OpenFileSystem() {
+void OpenFileSystem() {
 
 }
 
 
-void	CloseFileSystem() {
+void CloseFileSystem() {
 
 }
