@@ -41,6 +41,8 @@ int main(){
 	printf("Size : %d\n", inode->size);
 	printf("Type : %d\n", inode->type);
 	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[0]);
+	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[1]);
+	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[2]);
 
 	return 0;
 }
