@@ -68,7 +68,7 @@ int GetFreeInodeNum(void) {
 int GetFreeBlockNum(void) {
     char* block = (char*)malloc(sizeof(BLOCK_SIZE));
     DevReadBlock(2, block);
-    for(int i = 0; i < MAX_FD_ENTRY_MAX; i++)
+    for(int i = 7; i < MAX_FD_ENTRY_MAX; i++)
         if(block[i] == '0')
             return i;
     
