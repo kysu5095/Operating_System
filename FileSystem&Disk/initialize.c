@@ -62,4 +62,9 @@ void FileSysInit(void){
     DevWriteBlock(4, inodelist_2_block);
     DevWriteBlock(5, inodelist_3_block);
     DevWriteBlock(6, inodelist_4_block);
+    for(int i = 7; i < BLOCK_SIZE; i++){
+        char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+        memset(block, '0', sizeof(char) * BLOCK_SIZE);
+        DevWriteBlock(i, block);
+    }
 }
