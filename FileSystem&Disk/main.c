@@ -15,5 +15,18 @@ int main(){
     DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
 	DevReadBlock(7, (char*)dir);
 	printf("%d : %s(%d)\n", dir[0].inodeNum, dir[0].name, (int)strlen(dir[0].name));
+    FileSysInfo* dir2 = (FileSysInfo*)malloc(sizeof(FileSysInfo) * NUM_OF_DIRENT_PER_BLOCK);
+	DevReadBlock(0, (char*)dir2);
+	//printf("block : %d\n rootInodeNum : %d\n diskCapacity : %d\n numAllocBlocks : %d\n numFreeBlocks : %d\n numAllocInodes : %d\n blockBytemapBlock : %d\n inodeBytemapBlock : %d\n inodeListBlock : %d\n dataRegionBlock\n", dir2->blocks, dir2->rootInodeNum, dir2->diskCapacity, dir2->numAllocBlocks, dir2->numFreeBlocks, dir2->numAllocInodes, dir2->blockBytemapBlock, dir2->inodeBytemapBlock, dir2->inodeListBlock, dir2->dataRegionBlock);
+	printf("Blocks : %d\n", dir2->blocks);
+	printf("RootInodeNum : %d\n", dir2->rootInodeNum);
+	printf("DiskCapacity : %d\n", dir2->diskCapacity);
+	printf("NumAllocBlocks : %d\n", dir2->numAllocBlocks);
+	printf("NumFreeBlocks : %d\n", dir2->numFreeBlocks);
+	printf("NumAllocInodes : %d\n", dir2->numAllocInodes);
+	printf("BlockByteMapBlock : %d\n", dir2->blockBytemapBlock);
+	printf("InodeByteMapBlock : %d\n", dir2->inodeBytemapBlock);
+	printf("InodeListBlock : %d\n", dir2->inodeListBlock);
+	printf("DataRegionBlock : %d\n", dir2->dataRegionBlock);
 	return 0;
 }
