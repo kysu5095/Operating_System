@@ -23,13 +23,13 @@ void FileSysInit(void){
     char* inodelist_3_block   = (char*)malloc(BLOCK_SIZE);
     char* inodelist_4_block   = (char*)malloc(BLOCK_SIZE);
 
-    memset(file_sys_info_block, '0', sizeof(file_sys_info_block));
-    memset(inode_bytemap_block, '0', sizeof(inode_bytemap_block));
-    memset(block_bytemap_block, '0', sizeof(block_bytemap_block));
-    memset(inodelist_1_block,   '0', sizeof(inodelist_1_block));
-    memset(inodelist_2_block,   '0', sizeof(inodelist_2_block));
-    memset(inodelist_3_block,   '0', sizeof(inodelist_3_block));
-    memset(inodelist_4_block,   '0', sizeof(inodelist_4_block));
+    memset(file_sys_info_block, 0, sizeof(BLOCK_SIZE));
+    memset(inode_bytemap_block, 0, sizeof(BLOCK_SIZE));
+    memset(block_bytemap_block, 0, sizeof(BLOCK_SIZE));
+    memset(inodelist_1_block,   0, sizeof(BLOCK_SIZE));
+    memset(inodelist_2_block,   0, sizeof(BLOCK_SIZE));
+    memset(inodelist_3_block,   0, sizeof(BLOCK_SIZE));
+    memset(inodelist_4_block,   0, sizeof(BLOCK_SIZE));
 
     // /* file system information block */
     // pFileSysInfo = (FileSysInfo*)malloc(sizeof(FileSysInfo));

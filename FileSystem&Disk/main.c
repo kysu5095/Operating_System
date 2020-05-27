@@ -1,6 +1,7 @@
 #include "fs.h"
 #include "disk.h"
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 int main(){
