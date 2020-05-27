@@ -91,8 +91,8 @@ void CreateFileSystem() {
     Inode* pInode = (Inode*)malloc(sizeof(Inode));
     memset(pInode, 0, sizeof(Inode));
     GetInode(0, pInode);
-    pInode->allocBlocks = block_idx;
-    pInode->size = BLOCK_SIZE;
+    pInode->allocBlocks = 1;
+    pInode->size = pInode->allocBlocks * 512;
     pInode->type = FILE_TYPE_DIR;
     pInode->dirBlockPtr[0] = block_idx;
     PutInode(0, pInode);
