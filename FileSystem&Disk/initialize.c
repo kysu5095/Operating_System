@@ -42,4 +42,10 @@ void FileSysInit(void){
         memset(block, '0', sizeof(char) * BLOCK_SIZE);
         DevWriteBlock(i, block);
     }
+
+    /* file descriptor table initialize */
+    for(int i = 0; i < MAX_FD_ENTRY_MAX; i++){
+        fileDesc[i].bUsed = 0;
+        fileDesc[i].pOpenFile = NULL;
+    }
 }
