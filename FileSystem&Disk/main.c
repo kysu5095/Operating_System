@@ -8,9 +8,9 @@ int main(){
 	printf("Hello OS World\n");
 	DevCreateDisk();
 	FileSysInit();
-	char* block = (char*)malloc(BLOCK_SIZE);
-	DevReadBlock(0, block);
-	printf("%s\n", block);
+	// char* block = (char*)malloc(BLOCK_SIZE);
+	// DevReadBlock(0, block);
+	// printf("%s\n", block);
 	CreateFileSystem();
     DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
 	DevReadBlock(7, (char*)dir);
@@ -28,5 +28,19 @@ int main(){
 	printf("InodeByteMapBlock : %d\n", dir2->inodeBytemapBlock);
 	printf("InodeListBlock : %d\n", dir2->inodeListBlock);
 	printf("DataRegionBlock : %d\n", dir2->dataRegionBlock);
+	
+	Inode* inode = (Inode*)malloc(sizeof(Inode));
+	printf("\nBEFORE\n");
+	printf("AllocBlocks : %d\n", inode->allocBlocks);
+	printf("Size : %d\n", inode->size);
+	printf("Type : %d\n", inode->type);
+	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[0]);
+	GetInode(0, inode);
+	printf("\nAFTER\n");
+	printf("AllocBlocks : %d\n", inode->allocBlocks);
+	printf("Size : %d\n", inode->size);
+	printf("Type : %d\n", inode->type);
+	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[0]);
+
 	return 0;
 }
