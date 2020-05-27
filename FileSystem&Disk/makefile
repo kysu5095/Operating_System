@@ -11,4 +11,4 @@ fs_internal.o : fs_internal.c
 main.o : main.c
 	gcc -c -o main.o main.c
 clean :
-	rm *.o exefile
+	rm *.o exefile MY_DISK
