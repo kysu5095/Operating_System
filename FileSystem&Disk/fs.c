@@ -76,21 +76,24 @@ void CreateFileSystem() {
     pFileSysInfo->inodeListBlock    = INODELIST_BLOCK_FIRST;
     pFileSysInfo->dataRegionBlock   = 7;
 
-    /* setting file system block */
+    /* update file system block */
     pFileSysInfo->numAllocBlocks++;
     pFileSysInfo->numFreeBlocks--;
     pFileSysInfo->numAllocInodes++;
     DevWriteBlock(0, (char*)pFileSysInfo);
 
-    // /* inode bytemap block */
-    // char inode_bytemap[MAX_FD_ENTRY_MAX];
-    // memset(inode_bytemap, 0, sizeof(inode_bytemap));
-    // inode_bytemap[0] = '1';
-    // memcpy(inode_bytemap_block, inode_bytemap, BLOCK_SIZE);
+    /* update block, inode bytemap */
+    SetBlockBytemap(block_idx);
+    SetInodeBytemap(inode_idx);
 
-    // /* block bytemap block */
-    // char block_bytemap[MAX_FD_ENTRY_MAX];
-    // memset(block_bytemap, 0, sizeof(block_bytemap));
+    /* setting inode */
+    Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    GetInode(0, pInode);
+    pInode->allocBlocks = block_idx;
+    pInode->size = BLOCK_SIZE;
+    pInode->type = FILE_TYPE_DIR;
+    pInode->dirBlockPtr[0] = block_idx;
+    Setinode(0, pInode);
 }
 
 
