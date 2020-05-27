@@ -5,7 +5,7 @@
 #include "fs.h"
 
 void SetInodeBytemap(int inodeno) {
-    char* inode = (char*)malloc(sizeof(BLOCK_SIZE));
+    char* inode = (char*)malloc(sizeof(char) * BLOCK_SIZE);
     DevReadBlock(1, inode);
     inode[inodeno] = '1';
     DevWriteBlock(1, inode);
@@ -13,7 +13,7 @@ void SetInodeBytemap(int inodeno) {
 
 
 void ResetInodeBytemap(int inodeno) {
-    char* inode = (char*)malloc(sizeof(BLOCK_SIZE));
+    char* inode = (char*)malloc(sizeof(char) * BLOCK_SIZE);
     DevReadBlock(1, inode);
     inode[inodeno] = '0';
     DevWriteBlock(1, inode);
@@ -21,7 +21,7 @@ void ResetInodeBytemap(int inodeno) {
 
 
 void SetBlockBytemap(int blkno) {
-    char* block = (char*)malloc(sizeof(BLOCK_SIZE));
+    char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
     DevReadBlock(2, block);
     block[blkno] = '1';
     DevWriteBlock(2, block);
@@ -29,7 +29,7 @@ void SetBlockBytemap(int blkno) {
 
 
 void ResetBlockBytemap(int blkno) {
-    char* block = (char*)malloc(sizeof(BLOCK_SIZE));
+    char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
     DevReadBlock(2, block);
     block[blkno] = '0';
     DevWriteBlock(2, block);
@@ -66,7 +66,7 @@ void GetInode(int inodeno, Inode* pInode) {
 
 
 int GetFreeInodeNum(void) {
-    char* inode = (char*)malloc(sizeof(BLOCK_SIZE));
+    char* inode = (char*)malloc(sizeof(char) * BLOCK_SIZE);
     DevReadBlock(1, inode);
     for(int i = 0; i < MAX_FD_ENTRY_MAX; i++)
         if(inode[i] == '0')
@@ -77,7 +77,7 @@ int GetFreeInodeNum(void) {
 
 
 int GetFreeBlockNum(void) {
-    char* block = (char*)malloc(sizeof(BLOCK_SIZE));
+    char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
     DevReadBlock(2, block);
     for(int i = 7; i < MAX_FD_ENTRY_MAX; i++)
         if(block[i] == '0')
