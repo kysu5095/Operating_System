@@ -93,7 +93,7 @@ void CreateFileSystem() {
     pInode->size = BLOCK_SIZE;
     pInode->type = FILE_TYPE_DIR;
     pInode->dirBlockPtr[0] = block_idx;
-    Setinode(0, pInode);
+    PutInode(0, pInode);
 }
 
 
