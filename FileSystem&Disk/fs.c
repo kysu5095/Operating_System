@@ -32,7 +32,30 @@ int	RemoveFile(const char* szFileName) {
 
 
 int	MakeDir(const char* szDirName) {
+    Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    GetInode(0, pInode);
+    int root_block_idx = pInode->dirBlockPtr[0];
+    DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    DevReadBlock(root_block_idx, (char*)dir);
 
+    int idx;
+    for(idx = 0; idx < NUM_OF_DIRECT_BLOCK_PTR; idx++){
+        if(strcmp(szDirName, dir[idx].name) == 0){
+            perror("MakeDir : same directory name");
+            return -1;
+        }
+    }
+    for(idx = 0; idx < NUM_OF_DIRECT_BLOCK_PTR; idx++)
+        if(strcmp("", dir[idx].name) == 0)
+            break;
+    
+    int inode_idx;
+    if((inode_idx = GetFreeInodeNum()) == -1){
+        perror("MakeDir : inode_idx error");
+        exit(0);
+    }
+    strcpy(dir[idx].name, szDirName);
+    dir[idx].inodeNum = inode_idx;
 }
 
 
@@ -59,6 +82,7 @@ void CreateFileSystem() {
 
     /* allocate DirEntry array to block size */
     DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    memset(dir, 0, sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
     strcpy(dir[0].name, ".");
     dir[0].inodeNum = 0;
     DevWriteBlock(block_idx, (char*)dir);
