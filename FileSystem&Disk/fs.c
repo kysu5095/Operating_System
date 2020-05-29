@@ -132,11 +132,20 @@ int	MakeDir(const char* szDirName) {
                     GetInode(newDir[0].inodeNum, pInode);
                     root_block_idx = pInode->dirBlockPtr[0];
                     DevReadBlock(root_block_idx, (char*)dir);
+                    if((block_idx = GetFreeBlockNum()) == -1){
+                        perror("CreateFileSystem : block_idx error");
+                        return -1;
+                    }
+                    if((inode_idx = GetFreeInodeNum()) == -1){
+                        perror("CreateFileSystem : inode_idx error");
+                        return -1;
+                    }
                     break;
                 }
             }
         }
     }
+    return 0;
 }
 
 
