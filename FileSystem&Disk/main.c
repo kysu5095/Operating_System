@@ -37,7 +37,7 @@ int main(){
 	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[1]);
 	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[2]);*/
 
-	const char tmp[] = "/tmp";
+	const char tmp[] = "/tmp/tmp2";
 	MakeDir(tmp);
 	Inode* inode = (Inode*)malloc(sizeof(Inode));
 	GetInode(1, inode);
@@ -47,5 +47,14 @@ int main(){
 	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[0]);
 	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[1]);
 	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[2]);
+	
+	Inode* inode2 = (Inode*)malloc(sizeof(Inode));
+	GetInode(2, inode2);
+	printf("AllocBlocks : %d\n", inode2->allocBlocks);
+	printf("Size : %d\n", inode2->size);
+	printf("Type : %d\n", inode2->type);
+	printf("DirBlockPtr : %d\n", inode2->dirBlockPtr[0]);
+	printf("DirBlockPtr : %d\n", inode2->dirBlockPtr[1]);
+	printf("DirBlockPtr : %d\n", inode2->dirBlockPtr[2]);
 	return 0;
 }
