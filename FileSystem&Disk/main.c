@@ -9,7 +9,8 @@ int main(){
 	DevCreateDisk();
 	FileSysInit();
 	CreateFileSystem();
-	/*// char* block = (char*)malloc(BLOCK_SIZE);
+	/*
+	// char* block = (char*)malloc(BLOCK_SIZE);
 	// DevReadBlock(0, block);
 	// printf("%s\n", block);
     // DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
@@ -35,9 +36,12 @@ int main(){
 	printf("Type : %d\n", inode->type);
 	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[0]);
 	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[1]);
-	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[2]);*/
+	printf("DirBlockPtr : %d\n", inode->dirBlockPtr[2]);
+	*/
 
-	const char tmp[] = "/tmp/tmp2";
+	/*
+	const char tmp[] = "/tmp";
+	const char tmp2[] = "/tmp/tmp2";
 	MakeDir(tmp);
 	DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
 	DevReadBlock(7, (char*)dir);
@@ -49,5 +53,18 @@ int main(){
 	for(int i = 0; i < 3; i++){
 		printf("%s(%d)\n", dir[i].name, dir[i].inodeNum);
 	}
+	printf("========================\n");
+	MakeDir(tmp2);
+	DevReadBlock(7, (char*)dir);
+	for(int i = 0; i < 3; i++){
+		printf("%s(%d)\n", dir[i].name, dir[i].inodeNum);
+	}
+	printf("\n");
+	DevReadBlock(8, (char*)dir);
+	for(int i = 0; i < 3; i++){
+		printf("%s(%d)\n", dir[i].name, dir[i].inodeNum);
+	}
+	*/
+	
 	return 0;
 }
