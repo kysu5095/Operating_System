@@ -145,6 +145,10 @@ int	MakeDir(const char* szDirName) {
             }
         }
     }
+    /* memory release */
+    for(int i = 0; i < cnt; i++)
+        free(pathArr[i]);
+    free(pathArr);
     return 0;
 }
 
