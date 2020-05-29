@@ -91,19 +91,20 @@ int	MakeDir(const char* szDirName) {
         if(is_find == 0){
             for(int idx = 0; idx < NUM_OF_DIRECT_BLOCK_PTR; idx++){
                 /* find empty entry */
-                if(strcmp("null", dir[idx].name)){
+                if(strcmp("null", dir[idx].name) == 0){
                     strcpy(dir[idx].name, pathArr[i]);
                     dir[idx].inodeNum = inode_idx;
+                    DevWriteBlock(root_block_idx, (char*)dir);
 
                     /* new directory block */
                     DirEntry* newDir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
                     strcpy(newDir[0].name, ".");
                     newDir[0].inodeNum = inode_idx;
                     strcpy(newDir[1].name, "..");
-                    newDir[1].inodeNum = root_block_idx;
+                    newDir[1].inodeNum = dir[0].inodeNum;
                     for(int i = 2; i < NUM_OF_DIRENT_PER_BLOCK; i++){
-                        strcpy(dir[i].name, "null");
-                        dir[0].inodeNum = 0;
+                        strcpy(newDir[i].name, "null");
+                        newDir[i].inodeNum = 0;
                     }
                     DevWriteBlock(block_idx, (char*)newDir);
 
