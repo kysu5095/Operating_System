@@ -29,8 +29,10 @@ int	CreateFile(const char* szFileName) {
 
     /* for path parsing */
     int cnt = getPathLen(szFileName);
-    char** pathArr = (char**)malloc(sizeof(char*) * cnt);
-    char*  ptr = strtok(szFileName, "/");
+    char** pathArr  = (char**)malloc(sizeof(char*) * cnt);
+    char*  tempPath = (char*)malloc(sizeof((int)strlen(szFileName)));
+    strcpy(tempPath, szFileName);
+    char*  ptr = strtok(tempPath, "/");
     for(int i = 0; i < cnt; i++){
         int len = (int)strlen(ptr);
         pathArr[i] = (char*)malloc(sizeof(char) * len);
@@ -154,8 +156,10 @@ int	MakeDir(const char* szDirName) {
 
     /* for path parsing */
     int cnt = getPathLen(szDirName);
-    char** pathArr = (char**)malloc(sizeof(char*) * cnt);
-    char*  ptr = strtok(szDirName, "/");
+    char** pathArr  = (char**)malloc(sizeof(char*) * cnt);
+    char*  tempPath = (char*)malloc(sizeof((int)strlen(szDirName)));
+    strcpy(tempPath, szDirName);
+    char*  ptr = strtok(tempPath, "/");
     for(int i = 0; i < cnt; i++){
         int len = (int)strlen(ptr);
         pathArr[i] = (char*)malloc(sizeof(char) * len);
