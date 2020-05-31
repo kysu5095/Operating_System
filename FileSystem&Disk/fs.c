@@ -27,24 +27,28 @@ char** pathParsing(const char* name, int* cnt){
     return pathArr;
 }
 
-int dirParsing(char** path, int cnt, int last, int* block_idx, DirEntry* dir, Inode* pInode){
+int dirParsing(char** path, int cnt, int last, int* block_idx, DirEntry* dir, Inode* pInode, int flag){
     for(int idx = 0; idx < NUM_OF_DIRECT_BLOCK_PTR; idx++){
         /* exist same directory name or file name */
         if(strcmp(path[cnt], dir[idx].name) == 0){
             /* termination condition */
             if(cnt == last - 1) {
-                perror("dirParsing : already exist directory name or file name");
-                return -1;
+                if(flag == 0){
+                    perror("dirParsing : already exist directory name or file name");
+                    return -1;
+                }
+                else 
+                    return idx;
             } 
             /* into next block */
             GetInode(dir[idx].inodeNum, pInode);
             *block_idx = pInode->dirBlockPtr[0];
             DevReadBlock(*block_idx, (char*)dir);
             
-            return dirParsing(path, cnt + 1, last, block_idx, dir, pInode);
+            return dirParsing(path, cnt + 1, last, block_idx, dir, pInode, flag);
         }
         /* find last path */
-        if(cnt == last - 1 && idx == NUM_OF_DIRECT_BLOCK_PTR - 1)
+        if(idx == 0 && cnt == last - 1 && idx == NUM_OF_DIRECT_BLOCK_PTR - 1)
             return 0;
     }
     return -1;
@@ -74,7 +78,7 @@ int	CreateFile(const char* szFileName) {
     /* path parsing */
     int cnt = getPathLen(szFileName);
     char** pathArr  = pathParsing(szFileName, &cnt);
-    if(dirParsing(pathArr, 0, cnt, &root_block_idx, dir, pInode) == -1){
+    if(dirParsing(pathArr, 0, cnt, &root_block_idx, dir, pInode, 0) == -1){
         perror("CreateFile : no parent directory");
         return -1;
     }
@@ -128,7 +132,39 @@ int	CreateFile(const char* szFileName) {
 }
 
 int	OpenFile(const char* szFileName) {
+    /* get root inode & get root block */
+    Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    GetInode(0, pInode);
+    int root_block_idx = pInode->dirBlockPtr[0];
+    DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    DevReadBlock(root_block_idx, (char*)dir);
 
+    /* path parsing */
+    int cnt = getPathLen(szFileName);
+    char** pathArr  = pathParsing(szFileName, &cnt);
+    int inode_idx;
+    if((inode_idx = dirParsing(pathArr, 0, cnt, &root_block_idx, dir, pInode, 1)) == -1){
+        perror("CreateFile : no parent directory");
+        return -1;
+    }
+
+    /* set file descriptor and file object */
+    File* file = (File*)malloc(sizeof(File));
+    file->inodeNum = inode_idx;
+    file->fileOffset = 0;
+    int index = -1;
+    for(int des = 0; des < MAX_FD_ENTRY_MAX; des++){
+        if(fileDesc[des].bUsed == 0){
+            fileDesc[des].bUsed = 1;
+            fileDesc[des].pOpenFile = file;
+            index = des;
+            break;
+        }
+    }
+
+    /* memory release */
+    freeMemory(pathArr, cnt);
+    return index;
 }
 
 ///////////////////////////////////////////////////
@@ -144,7 +180,6 @@ int	WriteFile(int desc, char* pBuffer, int length) {
 int	ReadFile(int desc, char* pBuffer, int length) {
 
 }
-
 
 int	CloseFile(int desc) {
     free(fileDesc[desc].pOpenFile);
@@ -178,7 +213,7 @@ int	MakeDir(const char* szDirName) {
     /* path parsing */
     int cnt = getPathLen(szDirName);
     char** pathArr = pathParsing(szDirName, &cnt);
-    if(dirParsing(pathArr, 0, cnt, &root_block_idx, dir, pInode) == -1){
+    if(dirParsing(pathArr, 0, cnt, &root_block_idx, dir, pInode, 0) == -1){
         perror("MakeDir : no parent directory");
         return -1;
     }
@@ -301,7 +336,6 @@ void CreateFileSystem() {
 
 
 void OpenFileSystem() {
-
 
 }
 
