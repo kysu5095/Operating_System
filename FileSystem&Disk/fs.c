@@ -131,18 +131,25 @@ int	OpenFile(const char* szFileName) {
 
 }
 
+///////////////////////////////////////////////////
+///////////////////////////////////////////////////
+/*  writefile, readfile, closefile desc 변경하기  */
+///////////////////////////////////////////////////
+///////////////////////////////////////////////////
 
-int	WriteFile(int fileDesc, char* pBuffer, int length) {
+int	WriteFile(int desc, char* pBuffer, int length) {
 
 }
 
-int	ReadFile(int fileDesc, char* pBuffer, int length) {
+int	ReadFile(int desc, char* pBuffer, int length) {
 
 }
 
 
-int	CloseFile(int fileDesc) {
-
+int	CloseFile(int desc) {
+    free(fileDesc[desc].pOpenFile);
+    fileDesc[desc].bUsed = 0;
+    fileDesc[desc].pOpenFile = NULL;
 }
 
 int	RemoveFile(const char* szFileName) {
