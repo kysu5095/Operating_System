@@ -48,7 +48,7 @@ int dirParsing(char** path, int cnt, int last, int* block_idx, DirEntry* dir, In
             return dirParsing(path, cnt + 1, last, block_idx, dir, pInode, flag);
         }
         /* find last path */
-        if(idx == 0 && cnt == last - 1 && idx == NUM_OF_DIRECT_BLOCK_PTR - 1)
+        if(flag == 0 && cnt == last - 1 && idx == NUM_OF_DIRECT_BLOCK_PTR - 1)
             return 0;
     }
     return -1;
@@ -97,7 +97,7 @@ int	CreateFile(const char* szFileName) {
             pInode->allocBlocks = 0;
             pInode->size = 0;
             pInode->type = FILE_TYPE_FILE;
-            /* 뭐지 */
+            /* ??? */
             // pInode->dirBlockPtr[0] = block_idx;
             PutInode(inode_idx, pInode);
 
@@ -117,6 +117,7 @@ int	CreateFile(const char* szFileName) {
             for(int des = 0; des < MAX_FD_ENTRY_MAX; des++){
                 if(fileDesc[des].bUsed == 0){
                     fileDesc[des].bUsed = 1;
+                    fileDesc[des].pOpenFile = (File*)malloc(sizeof(File));
                     fileDesc[des].pOpenFile = file;
                     index = des;
                     break;
@@ -144,7 +145,7 @@ int	OpenFile(const char* szFileName) {
     char** pathArr  = pathParsing(szFileName, &cnt);
     int inode_idx;
     if((inode_idx = dirParsing(pathArr, 0, cnt, &root_block_idx, dir, pInode, 1)) == -1){
-        perror("CreateFile : no parent directory");
+        perror("OpenFile : no parent directory");
         return -1;
     }
 
@@ -156,15 +157,26 @@ int	OpenFile(const char* szFileName) {
     for(int des = 0; des < MAX_FD_ENTRY_MAX; des++){
         if(fileDesc[des].bUsed == 0){
             fileDesc[des].bUsed = 1;
+            fileDesc[des].pOpenFile = (File*)malloc(sizeof(File));
             fileDesc[des].pOpenFile = file;
             index = des;
             break;
+        }
+        if(des == MAX_FD_ENTRY_MAX - 1){
+            perror("OpenFile : file descriptor is full");
+            return -1;
         }
     }
 
     /* memory release */
     freeMemory(pathArr, cnt);
     return index;
+}
+
+int	CloseFile(int desc) {
+    free(fileDesc[desc].pOpenFile);
+    fileDesc[desc].bUsed = 0;
+    fileDesc[desc].pOpenFile = NULL;
 }
 
 ///////////////////////////////////////////////////
@@ -174,17 +186,58 @@ int	OpenFile(const char* szFileName) {
 ///////////////////////////////////////////////////
 
 int	WriteFile(int desc, char* pBuffer, int length) {
+    /* get block index */
+    int block_idx;
+    if((block_idx = GetFreeBlockNum()) == -1){
+        perror("WriteFile : block_idx error");
+        return -1;
+    }
 
+    /* get file descriptor */
+    if(fileDesc[desc].bUsed == 0){
+        perror("WriteFile : get file descriptor error");
+        return -1;
+    }
+    int fd = fileDesc[desc].pOpenFile->inodeNum;
+    Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    GetInode(fd, pInode);
+    for(int idx = 0; idx < NUM_OF_DIRECT_BLOCK_PTR; idx++){
+        if(pInode->dirBlockPtr[idx] == 0){
+            pInode->dirBlockPtr[idx] = block_idx;
+            PutInode(fd, pInode);
+            break;
+        }
+        if(idx == NUM_OF_DIRECT_BLOCK_PTR - 1){
+            perror("WriteFile : full dirBlockPtr");
+            return -1;
+        }
+    }
+
+    /* write file */
+    fileDesc[desc].pOpenFile->fileOffset += BLOCK_SIZE;
+    char* block = (char*)malloc(sizeof(BLOCK_SIZE));
+    memset(block, 0, sizeof(BLOCK_SIZE));
+    //////////////////////////////
+    /*     block = pBuffer??    */
+    //////////////////////////////
+    strcpy(block, pBuffer);
+    DevWriteBlock(block_idx, (char*)block);
+    
+    /* update block bytemap */
+    SetBlockBytemap(block_idx);
+
+    /* update file system information block */
+    FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(sizeof(BLOCK_SIZE));
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    fileSysInfo->numAllocBlocks++;
+    fileSysInfo->numFreeBlocks--;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    
+    return length;
 }
 
 int	ReadFile(int desc, char* pBuffer, int length) {
 
-}
-
-int	CloseFile(int desc) {
-    free(fileDesc[desc].pOpenFile);
-    fileDesc[desc].bUsed = 0;
-    fileDesc[desc].pOpenFile = NULL;
 }
 
 int	RemoveFile(const char* szFileName) {
@@ -261,12 +314,10 @@ int	MakeDir(const char* szDirName) {
             break;
         }
     }
-
     /* memory release */
     freeMemory(pathArr, cnt);
     return 0;
 }
-
 
 int	RemoveDir(const char* szDirName) {
 
@@ -275,7 +326,6 @@ int	RemoveDir(const char* szDirName) {
 int EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dirEntrys) {
 
 }
-
 
 void CreateFileSystem() {
     /* get block, inode index */
