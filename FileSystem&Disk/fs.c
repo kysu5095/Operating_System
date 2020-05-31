@@ -336,7 +336,59 @@ int	MakeDir(const char* szDirName) {
 }
 
 int	RemoveDir(const char* szDirName) {
+    /* get root inode & get root block */
+    Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    GetInode(0, pInode);
+    int root_block_idx = pInode->dirBlockPtr[0];
+    DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    DevReadBlock(root_block_idx, (char*)dir);
 
+    /* path parsing */
+    int cnt = getPathLen(szDirName);
+    char** pathArr = pathParsing(szDirName, &cnt);
+    int entry_idx;
+    if((entry_idx = dirParsing(pathArr, 0, cnt, &root_block_idx, dir, pInode, 1)) == -1){
+        perror("RemoveDir : no parent directory");
+        return -1;
+    }
+
+    /* delete directory */
+    GetInode(dir[entry_idx].inodeNum, pInode);
+    int block_idx = pInode->dirBlockPtr[0];
+    DevReadBlock(block_idx, (char*)dir);
+    for(int idx = 2; idx < NUM_OF_DIRECT_BLOCK_PTR; idx++){
+        if(strcmp("null", dir[idx].name) != 0){
+            perror("RemoveDir : directory has child");
+            return -1;
+        }
+    }
+
+    /* reinitialize directory inode and update inode bytemap */
+    memset(pInode, 0, sizeof(Inode));
+    PutInode(dir[entry_idx].inodeNum, pInode);
+    ResetInodeBytemap(dir[entry_idx].inodeNum);
+
+    /* reinitialize directory block and update block bytemap */
+    int parent_block_idx = dir[1].inodeNum;
+    memset(dir, 0, sizeof(char) * BLOCK_SIZE);
+    DevWriteBlock(block_idx, (char*)dir);
+    ResetBlockBytemap(block_idx);
+
+    /* update parent directory block data */
+    DirEntry* parent_dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    DevReadBlock(parent_block_idx, (char*)parent_dir);
+    strcpy(parent_dir[block_idx].name, "null");
+    parent_dir[block_idx].inodeNum = 0;
+
+    /* update file system information block */
+    FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(sizeof(BLOCK_SIZE));
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    fileSysInfo->numAllocBlocks--;
+    fileSysInfo->numFreeBlocks++;
+    fileSysInfo->numAllocInodes--;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+
+    return 0;
 }
 
 int EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dirEntrys) {
@@ -400,11 +452,9 @@ void CreateFileSystem() {
     PutInode(0, pInode);
 }
 
-
 void OpenFileSystem() {
 
 }
-
 
 void CloseFileSystem() {
 
