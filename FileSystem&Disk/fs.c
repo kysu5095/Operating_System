@@ -221,7 +221,7 @@ int	WriteFile(int desc, char* pBuffer, int length) {
     /*     block = pBuffer??    */
     //////////////////////////////
     strcpy(block, pBuffer);
-    DevWriteBlock(block_idx, (char*)block);
+    DevWriteBlock(block_idx, block);
     
     /* update block bytemap */
     SetBlockBytemap(block_idx);
@@ -237,7 +237,23 @@ int	WriteFile(int desc, char* pBuffer, int length) {
 }
 
 int	ReadFile(int desc, char* pBuffer, int length) {
+    if(fileDesc[desc].bUsed == 0){
+        perror("ReadFile : get file descriptor error");
+        return -1;
+    }
 
+    /* get inode & get block*/
+    Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    GetInode(fileDesc[desc].pOpenFile->inodeNum, pInode);
+    int logical_block_idx = (fileDesc[desc].pOpenFile->fileOffset) / BLOCK_SIZE;
+    char* block = (char*)malloc(sizeof(BLOCK_SIZE));
+    DevReadBlock(pInode->dirBlockPtr[logical_block_idx], block);
+    strcpy(pBuffer, block);
+
+    /* update file descriptor */
+    fileDesc[desc].pOpenFile->fileOffset += BLOCK_SIZE;
+
+    return length;
 }
 
 int	RemoveFile(const char* szFileName) {
