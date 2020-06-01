@@ -115,10 +115,10 @@ int	CreateFile(const char* szFileName) {
             file->inodeNum = inode_idx;
             file->fileOffset = 0;
             for(int des = 0; des < MAX_FD_ENTRY_MAX; des++){
-                if(fileDesc[des].bUsed == 0){
-                    fileDesc[des].bUsed = 1;
-                    fileDesc[des].pOpenFile = (File*)malloc(sizeof(File));
-                    fileDesc[des].pOpenFile = file;
+                if(pFileDesc[des].bUsed == 0){
+                    pFileDesc[des].bUsed = 1;
+                    pFileDesc[des].pOpenFile = (File*)malloc(sizeof(File));
+                    pFileDesc[des].pOpenFile = file;
                     index = des;
                     break;
                 }
@@ -155,10 +155,10 @@ int	OpenFile(const char* szFileName) {
     file->fileOffset = 0;
     int index = -1;
     for(int des = 0; des < MAX_FD_ENTRY_MAX; des++){
-        if(fileDesc[des].bUsed == 0){
-            fileDesc[des].bUsed = 1;
-            fileDesc[des].pOpenFile = (File*)malloc(sizeof(File));
-            fileDesc[des].pOpenFile = file;
+        if(pFileDesc[des].bUsed == 0){
+            pFileDesc[des].bUsed = 1;
+            pFileDesc[des].pOpenFile = (File*)malloc(sizeof(File));
+            pFileDesc[des].pOpenFile = file;
             index = des;
             break;
         }
@@ -173,19 +173,13 @@ int	OpenFile(const char* szFileName) {
     return index;
 }
 
-int	CloseFile(int desc) {
-    free(fileDesc[desc].pOpenFile);
-    fileDesc[desc].bUsed = 0;
-    fileDesc[desc].pOpenFile = NULL;
+int	CloseFile(int fileDesc) {
+    free(pFileDesc[fileDesc].pOpenFile);
+    pFileDesc[fileDesc].bUsed = 0;
+    pFileDesc[fileDesc].pOpenFile = NULL;
 }
 
-///////////////////////////////////////////////////
-///////////////////////////////////////////////////
-/*  writefile, readfile, closefile desc 변경하기  */
-///////////////////////////////////////////////////
-///////////////////////////////////////////////////
-
-int	WriteFile(int desc, char* pBuffer, int length) {
+int	WriteFile(int fileDesc, char* pBuffer, int length) {
     /* get block index */
     int block_idx;
     if((block_idx = GetFreeBlockNum()) == -1){
@@ -194,11 +188,11 @@ int	WriteFile(int desc, char* pBuffer, int length) {
     }
 
     /* get file descriptor */
-    if(fileDesc[desc].bUsed == 0){
+    if(pFileDesc[fileDesc].bUsed == 0){
         perror("WriteFile : get file descriptor error");
         return -1;
     }
-    int fd = fileDesc[desc].pOpenFile->inodeNum;
+    int fd = pFileDesc[fileDesc].pOpenFile->inodeNum;
     Inode* pInode = (Inode*)malloc(sizeof(Inode));
     GetInode(fd, pInode);
     for(int idx = 0; idx < NUM_OF_DIRECT_BLOCK_PTR; idx++){
@@ -214,7 +208,7 @@ int	WriteFile(int desc, char* pBuffer, int length) {
     }
 
     /* write file */
-    fileDesc[desc].pOpenFile->fileOffset += BLOCK_SIZE;
+    pFileDesc[fileDesc].pOpenFile->fileOffset += BLOCK_SIZE;
     char* block = (char*)malloc(sizeof(BLOCK_SIZE));
     memset(block, 0, sizeof(BLOCK_SIZE));
     //////////////////////////////
@@ -236,28 +230,80 @@ int	WriteFile(int desc, char* pBuffer, int length) {
     return length;
 }
 
-int	ReadFile(int desc, char* pBuffer, int length) {
-    if(fileDesc[desc].bUsed == 0){
+int	ReadFile(int fileDesc, char* pBuffer, int length) {
+    if(pFileDesc[fileDesc].bUsed == 0){
         perror("ReadFile : get file descriptor error");
         return -1;
     }
 
     /* get inode & get block*/
     Inode* pInode = (Inode*)malloc(sizeof(Inode));
-    GetInode(fileDesc[desc].pOpenFile->inodeNum, pInode);
-    int logical_block_idx = (fileDesc[desc].pOpenFile->fileOffset) / BLOCK_SIZE;
+    GetInode(pFileDesc[fileDesc].pOpenFile->inodeNum, pInode);
+    int logical_block_idx = (pFileDesc[fileDesc].pOpenFile->fileOffset) / BLOCK_SIZE;
     char* block = (char*)malloc(sizeof(BLOCK_SIZE));
     DevReadBlock(pInode->dirBlockPtr[logical_block_idx], block);
     strcpy(pBuffer, block);
 
     /* update file descriptor */
-    fileDesc[desc].pOpenFile->fileOffset += BLOCK_SIZE;
+    pFileDesc[fileDesc].pOpenFile->fileOffset += BLOCK_SIZE;
 
     return length;
 }
 
 int	RemoveFile(const char* szFileName) {
+/* get root inode & get root block */
+    Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    GetInode(0, pInode);
+    int root_block_idx = pInode->dirBlockPtr[0];
+    DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    DevReadBlock(root_block_idx, (char*)dir);
 
+    /* path parsing */
+    int cnt = getPathLen(szFileName);
+    char** pathArr = pathParsing(szFileName, &cnt);
+    int entry_idx;
+    if((entry_idx = dirParsing(pathArr, 0, cnt, &root_block_idx, dir, pInode, 1)) == -1){
+        perror("RemoveFile : no parent directory");
+        return -1;
+    }
+
+    /* delete file */
+    GetInode(dir[entry_idx].inodeNum, pInode);
+    int block_idx = pInode->dirBlockPtr[0];
+    DevReadBlock(block_idx, (char*)dir);
+    for(int idx = 2; idx < NUM_OF_DIRECT_BLOCK_PTR; idx++){
+        if(strcmp("null", dir[idx].name) != 0){
+            perror("RemoveFile : directory has child");
+            return -1;
+        }
+    }
+
+    /* reinitialize directory inode and update inode bytemap */
+    memset(pInode, 0, sizeof(Inode));
+    PutInode(dir[entry_idx].inodeNum, pInode);
+    ResetInodeBytemap(dir[entry_idx].inodeNum);
+
+    /* reinitialize directory block and update block bytemap */
+    int parent_block_idx = dir[1].inodeNum;
+    memset(dir, 0, sizeof(char) * BLOCK_SIZE);
+    DevWriteBlock(block_idx, (char*)dir);
+    ResetBlockBytemap(block_idx);
+
+    /* update parent directory block data */
+    DirEntry* parent_dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    DevReadBlock(parent_block_idx, (char*)parent_dir);
+    strcpy(parent_dir[block_idx].name, "null");
+    parent_dir[block_idx].inodeNum = 0;
+
+    /* update file system information block */
+    FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(sizeof(BLOCK_SIZE));
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    fileSysInfo->numAllocBlocks--;
+    fileSysInfo->numFreeBlocks++;
+    fileSysInfo->numAllocInodes--;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+
+    return 0;
 }
 
 int	MakeDir(const char* szDirName) {
@@ -457,5 +503,10 @@ void OpenFileSystem() {
 }
 
 void CloseFileSystem() {
+
+}
+
+int		GetFileStatus(const char* szPathName, FileStatus* pStatus)
+{
 
 }
