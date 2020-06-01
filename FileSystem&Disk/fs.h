@@ -82,8 +82,14 @@ typedef struct __FileDesc {
 	File* pOpenFile;
 }FileDesc;
 
+typedef struct _FileStatus {
+	int allocBlocks;
+	int size;
+	int type;
+	int	dirBlockPtr[NUM_OF_DIRECT_BLOCK_PTR];
+} FileStatus;
 
-FileDesc fileDesc[MAX_FD_ENTRY_MAX];
+FileDesc pFileDesc[MAX_FD_ENTRY_MAX];
 
 int		CreateFile(const char* szFileName);
 int		OpenFile(const char* szFileName);
@@ -97,10 +103,11 @@ int 		EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dir
 void		CreateFileSystem();
 void		OpenFileSystem();
 void		CloseFileSystem();
+int		GetFileStatus(const char* szPathName, FileStatus* pStatus);
 
 extern FileSysInfo* pFileSysInfo;
 
-extern void FileSysInit(void);	
+void FileSysInit(void);	
 
 /*  File system internal functions */
 
