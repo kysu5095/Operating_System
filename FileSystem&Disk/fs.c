@@ -506,7 +506,30 @@ void CloseFileSystem() {
     DevWriteBlock(0, (char*)pFileSysInfo);
 }
 
-int	GetFileStatus(const char* szPathName, FileStatus* pStatus)
-{
+int	GetFileStatus(const char* szPathName, FileStatus* pStatus){
+    /* get root inode & get root block */
+    Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    GetInode(0, pInode);
+    int root_block_idx = pInode->dirBlockPtr[0];
+    DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    DevReadBlock(root_block_idx, (char*)dir);
 
+    /* path parsing */
+    int cnt = getPathLen(szPathName);
+    char** pathArr  = pathParsing(szPathName, &cnt);
+    int inode_idx;
+    if((inode_idx = dirParsing(pathArr, 0, cnt, &root_block_idx, dir, pInode, 1)) == -1){
+        perror("GetFileStatus : no parent directory");
+        return -1;
+    }
+
+    /* input data */
+    GetInode(inode_idx, pInode);
+    pStatus->allocBlocks = pInode->allocBlocks;
+    pStatus->size = pInode->size;
+    pStatus->type = pInode->type;
+    for(int i = 0; i < NUM_OF_DIRECT_BLOCK_PTR; i++)
+        pStatus->dirBlockPtr[i] = pInode->dirBlockPtr[i];
+    
+    return 0;
 }
