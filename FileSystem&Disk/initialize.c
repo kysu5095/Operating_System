@@ -45,7 +45,7 @@ void FileSysInit(void){
 
     /* file descriptor table initialize */
     for(int i = 0; i < MAX_FD_ENTRY_MAX; i++){
-        fileDesc[i].bUsed = 0;
-        fileDesc[i].pOpenFile = NULL;
+        pFileDesc[i].bUsed = 0;
+        pFileDesc[i].pOpenFile = NULL;
     }
 }
