@@ -54,12 +54,16 @@ int dirParsing(char** path, int cnt, int last, int* block_idx, DirEntry* dir, In
     return -1;
 }
 
-void updateCapacity(DirEntry* dir, Inode* pInode, int capacity){
-    if(dir[0].inodeNum == FILESYS_INFO_BLOCK) return;
+void updateCapacity(DirEntry* dir, Inode* pInode, int _block, int _size){
+    pInode->allocBlocks += _block;
+    pInode->size += _size;
+    PutInode(dir[0].inodeNum, pInode);
+    if(dir[0].inodeNum == FILESYS_INFO_BLOCK) {
+        return;
+    }
     GetInode(dir[1].inodeNum, pInode);
-    pInode->allocBlocks++;
-    pInode->size += capacity;
     DevReadBlock(pInode->dirBlockPtr[0], (char*)dir);
+    updateCapacity(dir, pInode, _block, _size);
 }
 
 void freeMemory(char** memory, int cnt){
@@ -371,7 +375,8 @@ int	MakeDir(const char* szDirName) {
             PutInode(inode_idx, pInode);
 
             /* increase capacity of the all parent directory inode*/
-            updateCapacity(newDir, pInode, BLOCK_SIZE);
+            GetInode(dir[0].inodeNum, pInode);
+            updateCapacity(dir, pInode, 1, BLOCK_SIZE);
 
             /* update block, inode bytemap */
             SetBlockBytemap(block_idx);
@@ -441,8 +446,12 @@ int	RemoveDir(const char* szDirName) {
     /* update parent directory block data */
     DirEntry* parent_dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
     DevReadBlock(parent_block_idx, (char*)parent_dir);
-    strcpy(parent_dir[block_idx].name, "null");
-    parent_dir[block_idx].inodeNum = 0;
+    strcpy(parent_dir[entry_idx].name, "null");
+    parent_dir[entry_idx].inodeNum = 0;
+
+    /* decrease capacity of the all parent directory inode*/
+    GetInode(parent_dir[0].inodeNum, pInode);
+    updateCapacity(parent_dir, pInode, -1, -BLOCK_SIZE);
 
     /* update file system information block */
     FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(sizeof(BLOCK_SIZE));
