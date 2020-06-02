@@ -442,6 +442,10 @@ int EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dirEn
 }
 
 void CreateFileSystem() {
+    /* create file system */
+    DevCreateDisk();
+    FileSysInit();
+    
     /* get block, inode index */
     int block_idx, inode_idx;
     if((block_idx = GetFreeBlockNum()) == -1){
