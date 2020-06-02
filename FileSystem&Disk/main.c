@@ -54,7 +54,7 @@ int main(){
 	}
 	printf("========================\n");
 	MakeDir(tmp2);
-	CreateFile(tmp3);
+	//CreateFile(tmp3);
 	DevReadBlock(7, (char*)dir);
 	for(int i = 0; i < 4; i++){
 		printf("%s(%d)\n", dir[i].name, dir[i].inodeNum);
