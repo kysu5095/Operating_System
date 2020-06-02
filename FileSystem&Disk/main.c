@@ -6,8 +6,6 @@
 
 int main(){
 	printf("Hello OS World\n");
-	DevCreateDisk();
-	FileSysInit();
 	CreateFileSystem();
 	/*
 	// char* block = (char*)malloc(BLOCK_SIZE);
