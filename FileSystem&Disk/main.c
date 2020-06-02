@@ -54,9 +54,19 @@ int main(){
 	}
 	printf("========================\n");
 	MakeDir(tmp2);
+	const char tmp4[] = "/a";
+	const char tmp5[] = "/b";
+	const char tmp6[] = "/c";
+	const char tmp7[] = "/d";
+	const char tmp8[] = "/e";
+	MakeDir(tmp4);
+	MakeDir(tmp5);
+	MakeDir(tmp6);
+	MakeDir(tmp7);
+	MakeDir(tmp8);
 	//CreateFile(tmp3);
 	DevReadBlock(7, (char*)dir);
-	for(int i = 0; i < 4; i++){
+	for(int i = 0; i < 10; i++){
 		printf("%s(%d)\n", dir[i].name, dir[i].inodeNum);
 	}
 	printf("\n");
