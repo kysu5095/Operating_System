@@ -54,6 +54,14 @@ int dirParsing(char** path, int cnt, int last, int* block_idx, DirEntry* dir, In
     return -1;
 }
 
+void updateCapacity(DirEntry* dir, Inode* pInode, int capacity){
+    if(dir[0].inodeNum == FILESYS_INFO_BLOCK) return;
+    GetInode(dir[1].inodeNum, pInode);
+    pInode->allocBlocks++;
+    pInode->size += capacity;
+    DevReadBlock(pInode->dirBlockPtr[0], (char*)dir);
+}
+
 void freeMemory(char** memory, int cnt){
     for(int i = 0; i < cnt; i++)
         free(memory[i]);
@@ -362,6 +370,9 @@ int	MakeDir(const char* szDirName) {
             pInode->dirBlockPtr[0] = block_idx;
             PutInode(inode_idx, pInode);
 
+            /* increase capacity of the all parent directory inode*/
+            updateCapacity(newDir, pInode, BLOCK_SIZE);
+
             /* update block, inode bytemap */
             SetBlockBytemap(block_idx);
             SetInodeBytemap(inode_idx);
@@ -374,6 +385,13 @@ int	MakeDir(const char* szDirName) {
             fileSysInfo->numAllocInodes++;
             DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
             break;
+        }
+
+        if(idx == NUM_OF_DIRECT_BLOCK_PTR - 1){
+            perror("MakeDir : dirBlockPtr is full");
+            /* memory release */
+            freeMemory(pathArr, cnt);
+            return -1;
         }
     }
     /* memory release */
