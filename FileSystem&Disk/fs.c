@@ -118,18 +118,6 @@ void getPtrIndex(Inode* pInode, int* inode_idx, int* idx){
     return;
 }
 
-void updateCapacity(DirEntry* dir, Inode* pInode, int _block, int _size){
-    pInode->allocBlocks += _block;
-    pInode->size += _size;
-    PutInode(dir[0].inodeNum, pInode);
-    if(dir[0].inodeNum == FILESYS_INFO_BLOCK) {
-        return;
-    }
-    GetInode(dir[1].inodeNum, pInode);
-    DevReadBlock(pInode->dirBlockPtr[0], (char*)dir);
-    updateCapacity(dir, pInode, _block, _size);
-}
-
 void freeMemory(char** memory, int cnt){
     for(int i = 0; i < cnt; i++)
         free(memory[i]);
