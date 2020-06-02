@@ -499,14 +499,14 @@ void CreateFileSystem() {
 }
 
 void OpenFileSystem() {
-
+    DevReadBlock(0, (char*)pFileSysInfo);
 }
 
 void CloseFileSystem() {
-
+    DevWriteBlock(0, (char*)pFileSysInfo);
 }
 
-int		GetFileStatus(const char* szPathName, FileStatus* pStatus)
+int	GetFileStatus(const char* szPathName, FileStatus* pStatus)
 {
 
 }
