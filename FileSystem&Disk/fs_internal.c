@@ -52,6 +52,7 @@ void PutInode(int inodeno, Inode* pInode) {
     for(int i = 0; i < NUM_OF_DIRECT_BLOCK_PTR; i++)
         inode[node_idx].dirBlockPtr[i] = pInode->dirBlockPtr[i];
     DevWriteBlock(block_idx, (char*)inode);
+    free(inode);
 }
 
 
@@ -66,6 +67,7 @@ void GetInode(int inodeno, Inode* pInode) {
     pInode->type = inode[node_idx].type;
     for(int i = 0; i < NUM_OF_DIRECT_BLOCK_PTR; i++)
         pInode->dirBlockPtr[i] = inode[node_idx].dirBlockPtr[i];
+    free(inode);
 }
 
 
