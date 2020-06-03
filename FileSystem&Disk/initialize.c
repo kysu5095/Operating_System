@@ -37,10 +37,20 @@ void FileSysInit(void){
     DevWriteBlock(4, (char*)inodelist_2_block);
     DevWriteBlock(5, (char*)inodelist_3_block);
     DevWriteBlock(6, (char*)inodelist_4_block);
+
+    free(file_sys_info_block);
+    free(inode_bytemap_block);
+    free(block_bytemap_block);
+    free(inodelist_1_block);
+    free(inodelist_2_block);
+    free(inodelist_3_block);
+    free(inodelist_4_block);
+
     for(int i = 7; i < BLOCK_SIZE; i++){
         char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
         memset(block, '0', sizeof(char) * BLOCK_SIZE);
         DevWriteBlock(i, block);
+        free(block);
     }
 
     /* file descriptor table initialize */
