@@ -6,33 +6,37 @@
 
 void SetInodeBytemap(int inodeno) {
     char* inode = (char*)malloc(sizeof(char) * BLOCK_SIZE);
-    DevReadBlock(1, inode);
+    DevReadBlock(INODE_BYTEMAP_BLOCK_NUM, inode);
     inode[inodeno] = '1';
-    DevWriteBlock(1, inode);
+    DevWriteBlock(INODE_BYTEMAP_BLOCK_NUM, inode);
+    free(inode);
 }
 
 
 void ResetInodeBytemap(int inodeno) {
     char* inode = (char*)malloc(sizeof(char) * BLOCK_SIZE);
-    DevReadBlock(1, inode);
+    DevReadBlock(INODE_BYTEMAP_BLOCK_NUM, inode);
     inode[inodeno] = '0';
-    DevWriteBlock(1, inode);
+    DevWriteBlock(INODE_BYTEMAP_BLOCK_NUM, inode);
+    free(inode);
 }
 
 
 void SetBlockBytemap(int blkno) {
     char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
-    DevReadBlock(2, block);
+    DevReadBlock(BLOCK_BYTEMAP_BLOCK_NUM, block);
     block[blkno] = '1';
-    DevWriteBlock(2, block);
+    DevWriteBlock(BLOCK_BYTEMAP_BLOCK_NUM, block);
+    free(block);
 }
 
 
 void ResetBlockBytemap(int blkno) {
     char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
-    DevReadBlock(2, block);
+    DevReadBlock(BLOCK_BYTEMAP_BLOCK_NUM, block);
     block[blkno] = '0';
-    DevWriteBlock(2, block);
+    DevWriteBlock(BLOCK_BYTEMAP_BLOCK_NUM, block);
+    free(block);
 }
 
 
