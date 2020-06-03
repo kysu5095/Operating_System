@@ -44,15 +44,10 @@ void PutInode(int inodeno, Inode* pInode) {
     Inode* inode = (Inode*)malloc(sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
     int block_idx = (inodeno / NUM_OF_INODE_PER_BLOCK) + 3;
     DevReadBlock(block_idx, (char*)inode);
-    memcpy(inode, pInode, sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
-    // int node_idx = inodeno % NUM_OF_INODE_PER_BLOCK;
-    // inode[node_idx].allocBlocks = pInode->allocBlocks;
-    // inode[node_idx].size = pInode->size;
-    // inode[node_idx].type = pInode->type;
-    // for(int i = 0; i < NUM_OF_DIRECT_BLOCK_PTR; i++)
-    //     inode[node_idx].dirBlockPtr[i] = pInode->dirBlockPtr[i];
+    int node_idx = inodeno % NUM_OF_INODE_PER_BLOCK;
+    memcpy(inode + node_idx, pInode, sizeof(Inode));
     DevWriteBlock(block_idx, (char*)inode);
-    //free(inode);
+    free(inode);
 }
 
 
@@ -60,14 +55,9 @@ void GetInode(int inodeno, Inode* pInode) {
     Inode* inode = (Inode*)malloc(sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
     int block_idx = (inodeno / NUM_OF_INODE_PER_BLOCK) + 3;
     DevReadBlock(block_idx, (char*)inode);
-    memcpy(pInode, inode, sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
-    // int node_idx = inodeno % NUM_OF_INODE_PER_BLOCK;
-    // pInode->allocBlocks = inode[node_idx].allocBlocks;
-    // pInode->size = inode[node_idx].size;
-    // pInode->type = inode[node_idx].type;
-    // for(int i = 0; i < NUM_OF_DIRECT_BLOCK_PTR; i++)
-    //     pInode->dirBlockPtr[i] = inode[node_idx].dirBlockPtr[i];
-    //free(inode);
+    int node_idx = inodeno % NUM_OF_INODE_PER_BLOCK;
+    memcpy(pInode, inode + node_idx, sizeof(Inode));
+    free(inode);
 }
 
 
