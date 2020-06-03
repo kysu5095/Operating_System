@@ -26,7 +26,12 @@ int main(){
 		sprintf(b, "/tmp%d", a);
 		printf("%s\n", b);
 		MakeDir(b);
-		DevReadBlock(7, (char*)ddir);
+		// DevReadBlock(7, (char*)ddir);
+		// for(int j = 0; j < NUM_OF_DIRENT_PER_BLOCK; j++){
+		// 	if(strcmp(ddir[j].name, "null") == 0) break;
+		// 	printf("%s ", ddir[j].name); 
+		// }
+		// printf("\n");
 	}
 	 free(ddir);
 	// printf("===========remove==========\n");
