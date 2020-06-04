@@ -62,8 +62,8 @@ void GetInode(int inodeno, Inode* pInode) {
 
 
 int GetFreeInodeNum(void) {
-    int* inode = (int*)malloc(BLOCK_SIZE);
-    DevReadBlock(1, (char*)inode);
+    char* inode = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    DevReadBlock(1, inode);
     for(int i = 0; i < MAX_FD_ENTRY_MAX; i++)
         if(inode[i] == '0')
             return i;
@@ -73,8 +73,8 @@ int GetFreeInodeNum(void) {
 
 
 int GetFreeBlockNum(void) {
-    int* block = (int*)malloc( BLOCK_SIZE);
-    DevReadBlock(2, (char*)block);
+    char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    DevReadBlock(2, block);
     for(int i = 7; i < BLOCK_SIZE; i++)
         if(block[i] == '0')
             return i;
