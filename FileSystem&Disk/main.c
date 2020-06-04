@@ -1,93 +1,331 @@
-#include "fs.h"
-#include "disk.h"
-#include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <assert.h>
+#include "disk.h"
+#include "fs.h"
 
-int main(){
-	printf("Hello OS World\n");
-	CreateFileSystem();
+
+#define FILENAME_MAX_LEN 100
+#define DIR_NUM_MAX      100
+
+
+void PrintInodeBytemap(void)
+{
+	int i;
+	char* pBytemap = malloc(BLOCK_SIZE);
+
+	DevReadBlock(1, pBytemap);
+	printf("Inode bytemap: ");
+	for (i = 0; i < 64; i++)
+		printf("%c", pBytemap[i]);
+	printf("\n");
+}
+
+void PrintBlockBytemap(void)
+{
+	int i;
+	char* pBytemap = malloc(BLOCK_SIZE);
+
+	DevReadBlock(2, pBytemap);
+	printf("Block bytemap: ");
+	for (i = 0; i < BLOCK_SIZE; i++)
+		printf("%c", pBytemap[i]);
+	printf("\n");
+}
+
+void ListDirContents(const char* dirName)
+{
+	int i;
+	int count;
+	DirEntryInfo pDirEntry[DIR_NUM_MAX];
+	char outputName[FILENAME_MAX_LEN];
+	FileStatus status;
+	Inode pInode;
 	
-	// printf("Blocks : %d\n", pFileSysInfo->blocks);
-	// printf("RootInodeNum : %d\n", pFileSysInfo->rootInodeNum);
-	// printf("DiskCapacity : %d\n", pFileSysInfo->diskCapacity);
-	// printf("NumAllocBlocks : %d\n", pFileSysInfo->numAllocBlocks);
-	// printf("NumFreeBlocks : %d\n", pFileSysInfo->numFreeBlocks);
-	// printf("NumAllocInodes : %d\n", pFileSysInfo->numAllocInodes);
-	// printf("BlockByteMapBlock : %d\n", pFileSysInfo->blockBytemapBlock);
-	// printf("InodeByteMapBlock : %d\n", pFileSysInfo->inodeBytemapBlock);
-	// printf("InodeListBlock : %d\n", pFileSysInfo->inodeListBlock);
-	// printf("DataRegionBlock : %d\n", pFileSysInfo->dataRegionBlock);
-
-	DirEntry* ddir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
-	char* b = (char*)malloc(100);
-	for(int i = 0; i < 40; i++){
-		int a = i;
-		sprintf(b, "/tmp%d", a);
-		//printf("%s\n", b);
-		CreateFile(b);
-		// DevReadBlock(7, (char*)ddir);
-		// for(int j = 0; j < NUM_OF_DIRENT_PER_BLOCK; j++){
-		// 	if(strcmp(ddir[j].name, "null") == 0) break;
-		// 	printf("%s ", ddir[j].name); 
-		// }
-		// printf("\n");
+	count = EnumerateDirStatus(dirName, pDirEntry, DIR_NUM_MAX);
+	printf("[%s]Sub-directory:\n", dirName);
+	for (i = 0; i < count; i++)
+	{
+		memset(outputName, 0, FILENAME_MAX_LEN);
+		GetInode(pDirEntry[i].inodeNum, &pInode);
+		if (pDirEntry[i].type == FILE_TYPE_FILE) {
+			printf("\t name:%s, inode no:%d, type:file, size:%d, blocks:%d\n", pDirEntry[i].name, pDirEntry[i].inodeNum, pInode.size, pInode.allocBlocks);
+		}
+		else if (pDirEntry[i].type == FILE_TYPE_DIR)
+			printf("\t name:%s, inode no:%d, type:directory size:%d, blocks:%d\n", pDirEntry[i].name, pDirEntry[i].inodeNum,pInode.size, pInode.allocBlocks);
+		else
+		{
+			assert(0);
+		}
+		sprintf(outputName, "%s/%s", dirName, pDirEntry[i].name);
+		GetFileStatus(outputName, &status);
+		printf("\t name:%s, allocBlocks:%d, size:%d, dirBlockPtr:%d, %d, %d, %d, %d\n", pDirEntry[i].name, status.allocBlocks, status.size ,status.dirBlockPtr[0], status.dirBlockPtr[1], status.dirBlockPtr[2], status.dirBlockPtr[3], status.dirBlockPtr[4]);
 	}
-	//free(ddir);
-	printf("===========remove==========\n");
-	for(int i = 0; i < 35; i++){
-		int a = i;
-		char b[5];
-		sprintf(b, "/tmp%d", a);
-		printf("%s\n", b);
-		CloseFile(i);
-		RemoveFile(b);
+}
+
+void TestCase1(void)
+{
+	int i;
+	char dirName[MAX_NAME_LEN];
+
+	printf(" ---- Test Case 1 ----\n");
+
+	MakeDir("/tmp");
+	MakeDir("/usr");
+	MakeDir("/etc");
+	MakeDir("/home");
+	/* make home directory */
+	for (i = 0; i < 5; i++)
+	{
+		memset(dirName, 0, MAX_NAME_LEN);
+		sprintf(dirName, "/home/user%d", i);
+		MakeDir(dirName);
+	}
+	/* make etc directory */
+	for (i = 0; i < 34; i++)
+	{
+		memset(dirName, 0, MAX_NAME_LEN);
+		sprintf(dirName, "/etc/dev%d", i);
+		MakeDir(dirName);
+	}
+	ListDirContents("/home");
+	ListDirContents("/etc");
+
+	/* remove subdirectory of etc directory */
+	for (i = 33; i >= 0; i--)
+	{
+		memset(dirName, 0, MAX_NAME_LEN);
+		sprintf(dirName, "/etc/dev%d", i);
+		RemoveDir(dirName);
 	}
 
-	Inode* inode = (Inode*)malloc(sizeof(Inode));
-	GetInode(0, inode);
-	for(int i = 0; i <= 1; i++){
-		int val = inode->dirBlockPtr[i];
-		printf("DirPtr : %d\n", val);
-		if(val != 0){
-			DevReadBlock(val, (char*)ddir);
-			for(int j = 0; j < NUM_OF_DIRENT_PER_BLOCK; j++){
-				printf("%s(%d)\n", ddir[j].name, ddir[j].inodeNum);
-			}
+	ListDirContents("/etc");
+
+	/* remove subdirectory of root directory except /home */
+	RemoveDir("/etc");
+	RemoveDir("/usr");
+	RemoveDir("/tmp");
+}
+
+void TestCase2(void)
+{
+	int i;
+	char fileName[FILENAME_MAX_LEN];
+	char tempName[FILENAME_MAX_LEN];
+	char paths[15][FILENAME_MAX_LEN];
+
+	memset(fileName, 0, FILENAME_MAX_LEN);
+	memset(tempName, 0, FILENAME_MAX_LEN);
+
+	sprintf(fileName, "/dir");
+	MakeDir(fileName);
+
+	ListDirContents("/dir");
+	for (i = 0; i < 15; i++) {
+		sprintf(fileName, "%s/dir%d",fileName,i);
+		memset(paths[i], 0, FILENAME_MAX_LEN);
+		sprintf(paths[i], "%s", fileName);
+		MakeDir(fileName);
+	}
+
+	for (i = 0; i < 4; i++) {
+		sprintf(tempName, "%s", fileName);
+		sprintf(tempName, "%s/%d.txt", tempName, i);
+		CreateFile(tempName);
+	}
+
+	ListDirContents(fileName);
+
+	for (i = 0; i < 4; i++) {
+		sprintf(tempName, "%s", fileName);
+		sprintf(tempName, "%s/%d.txt", tempName, i);
+		RemoveFile(tempName);
+	}
+
+	for (i = 14; i >= 0; i--) {
+		ListDirContents(fileName);
+		RemoveDir(paths[i]);
+	}
+}
+
+void TestCase3(void) {
+	int i, j, k;
+	char alphabet[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$^&*()_";
+	char fileName[FILENAME_MAX_LEN];
+	char* pBuffer1 = (char*)malloc(BLOCK_SIZE);
+	char* pBuffer2 = (char*)malloc(BLOCK_SIZE);
+	int cIndex = 0;
+	int fd[4] = { 0, };
+
+	MakeDir("/home/test");
+	for (i = 0; i < 4; i++)
+	{
+		memset(fileName, 0, FILENAME_MAX_LEN);
+		sprintf(fileName, "/home/test/file%d", i);
+		fd[i] = CreateFile(fileName);
+	}
+
+	for (i = 0; i < 5; i++)
+	{
+		for (j = 0; j < 4; j++)
+		{
+			char* str = (char*)malloc(BLOCK_SIZE);
+			memset(str, 0, BLOCK_SIZE);
+			for (k = 0; k < BLOCK_SIZE; k++)
+				str[k] = alphabet[cIndex];
+			WriteFile(fd[j], str, BLOCK_SIZE);
+			cIndex++;
+			free(str);
 		}
 	}
 
-	// Inode* inode = (Inode*)malloc(sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
-	// DevReadBlock(0, (char*)inode);
-	// for(int i = 0; i < NUM_OF_INODE_PER_BLOCK; i++){
-	// 	inode[i].allocBlocks = i + 1;
-	// 	inode[i].size = i + 100;
-	// 	inode[i].type = i + 10000;
-	// 	for(int j = 0; j < NUM_OF_DIRECT_BLOCK_PTR; j++)
-	// 		inode[i].dirBlockPtr[j] = i + j + 1000000;
-	// }
-	// DevWriteBlock(0, (char*)inode);
-	// free(inode);
-	// Inode* inode2 = (Inode*)malloc(sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
-	// DevReadBlock(0, (char*)inode2);
-	// for(int i = 0; i < NUM_OF_INODE_PER_BLOCK; i++){
-	// 	printf("BLOCK : %d  SIZE : %d  TYPE : %d  ", inode2[i].allocBlocks, inode2[i].size, inode2[i].type);
-	// 	for(int j = 0; j < NUM_OF_DIRECT_BLOCK_PTR; j++){
-	// 		printf("  PTR%d : %d", j, inode2[i].dirBlockPtr[j]);
-	// 	}
-	// 	printf("\n");
-	// }
-	// free(inode2);
-	// char* tmp = (char*)malloc(BLOCK_SIZE);
-	// DevReadBlock(2, tmp);
-	// printf("%s(%d)\n", tmp, (int)strlen(tmp));
-	// for(int i = 0; i < 10; i++)
-	// 	SetBlockBytemap(i);
-	// DevReadBlock(2, tmp);
-	// printf("%s(%d)\n", tmp, (int)strlen(tmp));
-	// free(tmp);
+	for (i = 0; i < 4; i++)
+		CloseFile(fd[i]);
 
-	DevCloseDisk();
-	printf("finish\n");
+
+	for (i = 0; i < 4; i++)
+	{
+		memset(fileName, 0, FILENAME_MAX_LEN);
+		sprintf(fileName, "/home/test/file%d", i);
+		fd[i] = OpenFile(fileName);
+	}
+
+	cIndex = 0;
+
+	for (i = 0; i < 5; i++)
+	{
+		for (j = 0; j < 4; j++)
+		{
+			memset(pBuffer1, 0, BLOCK_SIZE);
+			for (k = 0; k < BLOCK_SIZE; k++)
+				pBuffer1[k] = alphabet[cIndex];
+			memset(pBuffer2, 0, BLOCK_SIZE);
+			ReadFile(fd[j], pBuffer2, BLOCK_SIZE);
+			cIndex++;
+		}
+	}
+}
+
+void TestCase4(void)
+{
+	int i,j;
+	int fd;
+	char fileName[FILENAME_MAX_LEN];
+	char pBuffer[1024];
+	char pBuffer1[BLOCK_SIZE];
+
+	printf(" ---- Test Case 4 ----\n");
+	for (i = 0; i < 5; i++)
+	{
+		for (j = 0; j < 5; j++)
+		{
+			memset(fileName, 0, FILENAME_MAX_LEN);
+			sprintf(fileName, "/home/user%d/file%d", i, j);
+			fd = CreateFile(fileName);
+			memset(pBuffer1, 0, BLOCK_SIZE);
+			strcpy(pBuffer1, fileName);
+			WriteFile(fd, pBuffer1, BLOCK_SIZE);
+			CloseFile(fd);
+		}
+	}
+
+	for (i = 0; i < 5; i++)
+	{
+		if (i % 2 == 0)
+		{
+			memset(fileName, 0, FILENAME_MAX_LEN);
+			sprintf(fileName, "/home/user3/file%d", i);
+			RemoveFile(fileName);
+		}
+	}
+	printf(" ---- Test Case 4: files of even number removed ----\n");
+
+	for (i = 0; i < 5; i++)
+	{
+		if (i % 2)
+		{
+			memset(fileName, 0, FILENAME_MAX_LEN);
+			sprintf(fileName, "/home/user3/file%d", i);
+			fd = OpenFile(fileName);
+
+			memset(pBuffer, 0, 1024);
+			strcpy(pBuffer, fileName);
+			WriteFile(fd, pBuffer, 513);
+			CloseFile(fd);
+		}
+	}
+	printf(" ---- Test Case 4: files of odd number overwritten ----\n");
+
+	ListDirContents("/home/user3");
+
+	for (i = 0; i < 5; i++)
+	{
+		if (i % 2 == 0)
+		{
+			memset(fileName, 0, FILENAME_MAX_LEN);
+			sprintf(fileName, "/home/user3/file%d", i);
+			fd = CreateFile(fileName);
+
+			memset(pBuffer, 0, 1024);
+			strcpy(pBuffer, fileName);
+			WriteFile(fd, pBuffer, 513);
+			WriteFile(fd, pBuffer, 513);
+			CloseFile(fd);
+		}
+	}
+	printf(" ---- Test Case 4: files of even number re-created & written ----\n");
+
+	ListDirContents("/home/user3");
+}
+
+int main(int argc, char** argv)
+{
+	int TcNum;
+	if (argc < 3)
+	{
+	ERROR:
+		printf("usage: a.out [format | readwrite] [1-4])\n");
+		return -1;
+	}
+	if (strcmp(argv[1], "format") == 0)
+		CreateFileSystem();
+	else if (strcmp(argv[1], "readwrite") == 0)
+		OpenFileSystem();
+	else
+		goto ERROR;
+
+	TcNum = atoi(argv[2]);
+
+
+	switch (TcNum)
+	{
+	case 1:
+		TestCase1();
+		PrintInodeBytemap(); PrintBlockBytemap();
+		break;
+	case 2:
+		TestCase2();
+		PrintInodeBytemap(); PrintBlockBytemap();
+		break;
+	case 3:
+		TestCase3();
+		PrintInodeBytemap(); PrintBlockBytemap();
+		break;
+	case 4:
+		TestCase4();
+		PrintInodeBytemap(); PrintBlockBytemap();
+		break;
+
+	default:
+		CloseFileSystem();
+		goto ERROR;
+	}
+
+	CloseFileSystem();
+
 	return 0;
 }
