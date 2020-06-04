@@ -6,9 +6,9 @@
 
 void SetInodeBytemap(int inodeno) {
     int* inode = (int*)malloc(BLOCK_SIZE);
-    DevReadBlock(INODE_BYTEMAP_BLOCK_NUM, (int*)inode);
+    DevReadBlock(INODE_BYTEMAP_BLOCK_NUM, (char*)inode);
     inode[inodeno] = 1;
-    DevWriteBlock(INODE_BYTEMAP_BLOCK_NUM, (int*)inode);
+    DevWriteBlock(INODE_BYTEMAP_BLOCK_NUM, (char*)inode);
     free(inode);
 }
 
@@ -63,7 +63,7 @@ void GetInode(int inodeno, Inode* pInode) {
 
 int GetFreeInodeNum(void) {
     int* inode = (int*)malloc(BLOCK_SIZE);
-    DevReadBlock(1, inode);
+    DevReadBlock(1, (char*)inode);
     for(int i = 0; i < MAX_FD_ENTRY_MAX; i++)
         if(inode[i] == 0)
             return i;
@@ -74,7 +74,7 @@ int GetFreeInodeNum(void) {
 
 int GetFreeBlockNum(void) {
     int* block = (int*)malloc( BLOCK_SIZE);
-    DevReadBlock(2, block);
+    DevReadBlock(2, (char*)block);
     for(int i = 7; i < BLOCK_SIZE; i++)
         if(block[i] == 0)
             return i;
