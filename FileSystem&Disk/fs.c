@@ -490,7 +490,6 @@ int	RemoveDir(const char* szDirName) {
         }
     }
 
-    //int parent_inode_idx;
     FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
     for(int ptr = 0; ptr < NUM_OF_DIRECT_BLOCK_PTR; ptr++){
         if(pInode->dirBlockPtr[ptr] == 0) continue;
@@ -531,6 +530,12 @@ int	RemoveDir(const char* szDirName) {
     DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
     fileSysInfo->numAllocInodes--;
     DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+
+    free(dir);
+    free(childDir);
+    free(pInode);
+    free(parentInode);
+    free(fileSysInfo);
 
     return 0;
 }
