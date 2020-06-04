@@ -138,6 +138,21 @@ void freeMemory(char** memory, int cnt){
 }
 
 int	CreateFile(const char* szFileName) {
+    /* get root inode & get root block */
+    Inode* pInode = (Inode*)malloc(sizeof(Inode));
+    GetInode(0, pInode);
+    DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    int idx, parent_block_idx = 0, parent_inode_idx = 0, blockPtr;
+
+    /* path parsing */
+    int cnt = getPathLen(szFileName);
+    char** pathArr  = pathParsing(szFileName, &cnt);
+    if(dirParsing(pathArr, 0, cnt, &parent_inode_idx, &parent_block_idx, dir, pInode, 0) == -1){
+        perror("CreateFile : no parent directory");
+        return -1;
+    }
+    getPtrIndex(pInode, dir, &parent_inode_idx, &blockPtr, &idx);
+
     /* get inode index */
     int inode_idx, index = -1;
     if((inode_idx = GetFreeInodeNum()) == -1){
@@ -145,66 +160,47 @@ int	CreateFile(const char* szFileName) {
         return -1;
     }
 
-    /* get root inode & get root block */
-    Inode* pInode = (Inode*)malloc(sizeof(Inode));
-    GetInode(0, pInode);
-    DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
-    int tmp = 0, parent_inode_idx = 0;
-
-    /* path parsing */
-    int cnt = getPathLen(szFileName);
-    char** pathArr  = pathParsing(szFileName, &cnt);
-    if(dirParsing(pathArr, 0, cnt, &parent_inode_idx, &tmp, dir, pInode, 0) == -1){
-        perror("CreateFile : no parent directory");
-        return -1;
-    }
-
-    //int root_block_idx = getPtrIndex(pInode, parent_inode_idx);
     /* make new file */
-    for(int idx = 0; idx < NUM_OF_DIRECT_BLOCK_PTR; idx++){
-        /* find empty entry */
-        if(strcmp("null", dir[idx].name) == 0){
-            strcpy(dir[idx].name, pathArr[cnt - 1]);
-            dir[idx].inodeNum = inode_idx;
-            //DevWriteBlock(root_block_idx, (char*)dir);
+    strcpy(dir[idx].name, pathArr[cnt - 1]);
+    dir[idx].inodeNum = inode_idx;
+    DevWriteBlock(pInode->dirBlockPtr[blockPtr], (char*)dir);
 
-            /* setting inode */
-            GetInode(inode_idx, pInode);
-            memset(pInode, 0, sizeof(Inode));
-            pInode->allocBlocks = 0;
-            pInode->size = 0;
-            pInode->type = FILE_TYPE_FILE;
-            /* ??? */
-            // pInode->dirBlockPtr[0] = block_idx;
-            PutInode(inode_idx, pInode);
+    /* setting inode */
+    GetInode(inode_idx, pInode);
+    memset(pInode, 0, sizeof(Inode));
+    pInode->allocBlocks = 0;
+    pInode->size = 0;
+    pInode->type = FILE_TYPE_FILE;
+    PutInode(inode_idx, pInode);
 
-            /* update inode bytemap */
-            SetInodeBytemap(inode_idx);
+    /* update inode bytemap */
+    SetInodeBytemap(inode_idx);
 
-            /* update file system information block */
-            FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
-            DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-            fileSysInfo->numAllocInodes++;
-            DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-            
-            /* set file descriptor and file object */
-            File* file = (File*)malloc(sizeof(File));
-            file->inodeNum = inode_idx;
-            file->fileOffset = 0;
-            for(int des = 0; des < MAX_FD_ENTRY_MAX; des++){
-                if(pFileDesc[des].bUsed == 0){
-                    pFileDesc[des].bUsed = 1;
-                    pFileDesc[des].pOpenFile = (File*)malloc(sizeof(File));
-                    pFileDesc[des].pOpenFile = file;
-                    index = des;
-                    break;
-                }
-            }
+    /* update file system information block */
+    FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    fileSysInfo->numAllocInodes++;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+
+    /* set file descriptor and file object */
+    File* file = (File*)malloc(sizeof(File));
+    file->inodeNum = inode_idx;
+    file->fileOffset = 0;
+    for(int des = 0; des < MAX_FD_ENTRY_MAX; des++){
+        if(pFileDesc[des].bUsed == 0){
+            pFileDesc[des].bUsed = 1;
+            pFileDesc[des].pOpenFile = (File*)malloc(sizeof(File));
+            memcpy(pFileDesc[des].pOpenFile, file, sizeof(File));
+            index = des;
             break;
         }
     }
 
     /* memory release */
+    free(pInode);
+    free(dir);
+    free(fileSysInfo);
+    free(file);
     freeMemory(pathArr, cnt);
     return index;
 }
@@ -333,15 +329,15 @@ int	RemoveFile(const char* szFileName) {
     /* get root inode & get root block */
     Inode* pInode = (Inode*)malloc(sizeof(Inode));
     GetInode(0, pInode);
-    int tmp = 0, root_block_idx;
     DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
+    int idx, parent_inode_idx = 0;
 
     /* path parsing */
     int cnt = getPathLen(szFileName);
     char** pathArr = pathParsing(szFileName, &cnt);
-    int entry_idx;
-    if((entry_idx = dirParsing(pathArr, 0, cnt, &root_block_idx, &tmp, dir, pInode, 1)) == -1){
-        perror("RemoveFile : no parent directory");
+    int entry_idx, parent_block_idx;
+    if((entry_idx = dirParsing(pathArr, 0, cnt, &parent_inode_idx, &parent_block_idx, dir, pInode, 1)) == -1){
+        perror("RemoveDir : no parent directory");
         return -1;
     }
 
@@ -364,7 +360,7 @@ int	RemoveFile(const char* szFileName) {
     /* update parent directory block data */
     strcpy(dir[entry_idx].name, "null");
     dir[entry_idx].inodeNum = 0;
-    DevWriteBlock(root_block_idx, (char*)dir);
+    DevWriteBlock(parent_block_idx, (char*)dir);
 
     /* update file system information block */
     FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
@@ -372,6 +368,9 @@ int	RemoveFile(const char* szFileName) {
     fileSysInfo->numAllocInodes--;
     DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
 
+    free(pInode);
+    free(dir);
+    free(fileSysInfo);
     return 0;
 }
 
@@ -402,6 +401,7 @@ int	MakeDir(const char* szDirName) {
         perror("MakeDir : inode_idx error");
         return -1;
     }
+
     /* update parent directory */
     strcpy(dir[idx].name, pathArr[cnt - 1]);
     dir[idx].inodeNum = inode_idx;
@@ -608,11 +608,13 @@ void CreateFileSystem() {
 }
 
 void OpenFileSystem() {
+    DevOpenDisk();
     DevReadBlock(0, (char*)pFileSysInfo);
 }
 
 void CloseFileSystem() {
     DevWriteBlock(0, (char*)pFileSysInfo);
+    DevCloseDisk();
 }
 
 int	GetFileStatus(const char* szPathName, FileStatus* pStatus){
