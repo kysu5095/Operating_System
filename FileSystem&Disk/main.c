@@ -24,7 +24,7 @@ int main(){
 	for(int i = 0; i < 40; i++){
 		int a = i;
 		sprintf(b, "/tmp%d", a);
-		printf("%s\n", b);
+		//printf("%s\n", b);
 		MakeDir(b);
 		// DevReadBlock(7, (char*)ddir);
 		// for(int j = 0; j < NUM_OF_DIRENT_PER_BLOCK; j++){
@@ -33,15 +33,28 @@ int main(){
 		// }
 		// printf("\n");
 	}
-	 free(ddir);
-	// printf("===========remove==========\n");
-	// for(int i = 0; i < 20; i++){
-	// 	int a = i;
-	// 	char b[5];
-	// 	sprintf(b, "/tmp%d", a);
-	// 	printf("%s\n", b);
-	// 	RemoveDir(b);
-	// }
+	//free(ddir);
+	printf("===========remove==========\n");
+	for(int i = 0; i < 35; i++){
+		int a = i;
+		char b[5];
+		sprintf(b, "/tmp%d", a);
+		printf("%s\n", b);
+		RemoveDir(b);
+	}
+
+	Inode* inode = (Inode*)malloc(sizeof(Inode));
+	GetInode(0, inode);
+	for(int i = 0; i <= 1; i++){
+		int val = inode->dirBlockPtr[i];
+		printf("DirPtr : %d\n", val);
+		if(val != 0){
+			DevReadBlock(val, (char*)ddir);
+			for(int j = 0; j < NUM_OF_DIRENT_PER_BLOCK; j++){
+				printf("%s(%d)\n", ddir[j].name, ddir[j].inodeNum);
+			}
+		}
+	}
 
 	// Inode* inode = (Inode*)malloc(sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
 	// DevReadBlock(0, (char*)inode);
