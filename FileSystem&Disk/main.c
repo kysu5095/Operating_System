@@ -25,7 +25,7 @@ int main(){
 		int a = i;
 		sprintf(b, "/tmp%d", a);
 		//printf("%s\n", b);
-		MakeDir(b);
+		CreateFile(b);
 		// DevReadBlock(7, (char*)ddir);
 		// for(int j = 0; j < NUM_OF_DIRENT_PER_BLOCK; j++){
 		// 	if(strcmp(ddir[j].name, "null") == 0) break;
@@ -40,7 +40,8 @@ int main(){
 		char b[5];
 		sprintf(b, "/tmp%d", a);
 		printf("%s\n", b);
-		RemoveDir(b);
+		CloseFile(i);
+		RemoveFile(b);
 	}
 
 	Inode* inode = (Inode*)malloc(sizeof(Inode));
