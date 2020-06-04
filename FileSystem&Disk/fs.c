@@ -15,17 +15,18 @@ int getPathLen(const char* szDirName){
 char** pathParsing(const char* name, int* cnt){
     char** pathArr  = (char**)malloc(sizeof(char*) * (*cnt));
     char*  tempPath = (char* )malloc(sizeof((int)strlen(name)));
-    memcpy(tempPath, name, sizeof(name));
+    strcpy(tempPath, name);
     char*  ptr = strtok(tempPath, "/");
     for(int i = 0; i < (*cnt); i++){
-        //int len = (int)strlen(ptr);
-        //pathArr[i] = (char*)malloc(sizeof(char) * len);
-        pathArr[i] = (char*)malloc(sizeof(ptr));
+        int len = (int)strlen(ptr);
+        pathArr[i] = (char*)malloc(sizeof(char) * len);
+        //pathArr[i] = (char*)malloc(sizeof(ptr));
         //strcpy(pathArr[i], ptr);
-        memcpy(pathArr[i], ptr, sizeof(ptr));
+        strcpy(pathArr[i], ptr);
         ptr = strtok(NULL, "/");
     }
-    //free(ptr);
+    free(tempPath);
+    free(ptr);
     return pathArr;
 }
 
@@ -40,6 +41,7 @@ int dirParsing(char** path, int cnt, int last, int* inode_idx, int* block_idx, D
                 /* termination condition */
                 if(cnt == last - 1) {
                     if(flag == 0){
+                        printf("%s // %s\n", path[cnt], dir[idx].name);
                         perror("dirParsing : already exist directory name or file name");
                         return -1;
                     }
@@ -552,7 +554,7 @@ int EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dirEn
         if(count == dirEntrys) break;
         if(pInode->dirBlockPtr[ptr] == 0) continue;
         DevReadBlock(pInode->dirBlockPtr[ptr], (char*)dir);
-        for(int i = 0; i < NUM_OF_DIRENT_PER_BLOCK; i++){
+        for(int i = 2; i < NUM_OF_DIRENT_PER_BLOCK; i++){
             if(strcmp(dir[i].name, "null") == 0) continue;
             memcpy(pDirEntry[count].name, dir[i].name, sizeof(dir[i].name));
             pDirEntry[count].inodeNum = dir[i].inodeNum;
@@ -659,7 +661,13 @@ int	GetFileStatus(const char* szPathName, FileStatus* pStatus){
 
     /* copy data */
     GetInode(dir[entry_idx].inodeNum, pInode);
-    memcpy(pStatus, pInode, sizeof(pInode));
-    
+    pStatus->allocBlocks = pInode->allocBlocks;
+    pStatus->size = pInode->size;
+    pStatus->type = pInode->type;
+    for(int i = 0; i < NUM_OF_DIRECT_BLOCK_PTR; i++)
+        pStatus->dirBlockPtr[i] = pInode->dirBlockPtr[i];
+    //memcpy(pStatus, pInode, sizeof(pStatus));
+    free(pInode);
+    free(dir);
     return 0;
 }
