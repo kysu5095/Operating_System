@@ -5,37 +5,37 @@
 #include "fs.h"
 
 void SetInodeBytemap(int inodeno) {
-    int* inode = (int*)malloc(BLOCK_SIZE);
-    DevReadBlock(INODE_BYTEMAP_BLOCK_NUM, (char*)inode);
-    inode[inodeno] = 1;
-    DevWriteBlock(INODE_BYTEMAP_BLOCK_NUM, (char*)inode);
+    char* inode = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    DevReadBlock(INODE_BYTEMAP_BLOCK_NUM, inode);
+    inode[inodeno] = '1';
+    DevWriteBlock(INODE_BYTEMAP_BLOCK_NUM, inode);
     free(inode);
 }
 
 
 void ResetInodeBytemap(int inodeno) {
-    int* inode = (int*)malloc(BLOCK_SIZE);
-    DevReadBlock(INODE_BYTEMAP_BLOCK_NUM, (char*)inode);
-    inode[inodeno] = 0;
-    DevWriteBlock(INODE_BYTEMAP_BLOCK_NUM, (char*)inode);
+    char* inode = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    DevReadBlock(INODE_BYTEMAP_BLOCK_NUM, inode);
+    inode[inodeno] = '0';
+    DevWriteBlock(INODE_BYTEMAP_BLOCK_NUM, inode);
     free(inode);
 }
 
 
 void SetBlockBytemap(int blkno) {
-    int* block = (int*)malloc(BLOCK_SIZE);
-    DevReadBlock(BLOCK_BYTEMAP_BLOCK_NUM, (char*)block);
-    block[blkno] = 1;
-    DevWriteBlock(BLOCK_BYTEMAP_BLOCK_NUM, (char*)block);
+    char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    DevReadBlock(BLOCK_BYTEMAP_BLOCK_NUM, block);
+    block[blkno] = '1';
+    DevWriteBlock(BLOCK_BYTEMAP_BLOCK_NUM, block);
     free(block);
 }
 
 
 void ResetBlockBytemap(int blkno) {
-    int* block = (int*)malloc(BLOCK_SIZE);
-    DevReadBlock(BLOCK_BYTEMAP_BLOCK_NUM, (char*)block);
-    block[blkno] = 0;
-    DevWriteBlock(BLOCK_BYTEMAP_BLOCK_NUM, (char*)block);
+    char* block = (char*)malloc(sizeof(char) * BLOCK_SIZE);
+    DevReadBlock(BLOCK_BYTEMAP_BLOCK_NUM, block);
+    block[blkno] = '0';
+    DevWriteBlock(BLOCK_BYTEMAP_BLOCK_NUM, block);
     free(block);
 }
 
@@ -65,7 +65,7 @@ int GetFreeInodeNum(void) {
     int* inode = (int*)malloc(BLOCK_SIZE);
     DevReadBlock(1, (char*)inode);
     for(int i = 0; i < MAX_FD_ENTRY_MAX; i++)
-        if(inode[i] == 0)
+        if(inode[i] == '0')
             return i;
     free(inode);
     return -1;
@@ -76,7 +76,7 @@ int GetFreeBlockNum(void) {
     int* block = (int*)malloc( BLOCK_SIZE);
     DevReadBlock(2, (char*)block);
     for(int i = 7; i < BLOCK_SIZE; i++)
-        if(block[i] == 0)
+        if(block[i] == '0')
             return i;
     free(block);
     return -1;
