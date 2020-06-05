@@ -23,8 +23,8 @@ void FileSysInit(void){
     Inode* inodelist_4_block  = (Inode*)malloc(sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
 
     memset(pFileSysInfo, 0, BLOCK_SIZE);
-    memset(inode_bytemap_block, '0', sizeof(char) * BLOCK_SIZE);
-    memset(block_bytemap_block, '0', sizeof(char) * BLOCK_SIZE);
+    memset(inode_bytemap_block, 0, sizeof(char) * BLOCK_SIZE);
+    memset(block_bytemap_block, 0, sizeof(char) * BLOCK_SIZE);
     memset(inodelist_1_block, 0, sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
     memset(inodelist_2_block, 0, sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
     memset(inodelist_3_block, 0, sizeof(Inode) * NUM_OF_INODE_PER_BLOCK);
