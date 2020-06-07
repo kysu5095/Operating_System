@@ -9,8 +9,8 @@
 #include <assert.h>
 #include <unistd.h>
 
-FileSysInfo* pFileSysInfo;
-void FileSysInit(void);
+//FileSysInfo* pFileSysInfo;
+//void FileSysInit(void);
 
 /* File System Initialize */ 
 void FileSysInit(void){
