@@ -281,7 +281,7 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
     int fd = file->inodeNum;
     Inode* pInode = (Inode*)malloc(sizeof(Inode));
     GetInode(fd, pInode);
-    char* block = (char*)malloc(BLOCK_SIZE);\
+    char* block = (char*)malloc(BLOCK_SIZE);
     int logical_block_idx = (file->fileOffset) / BLOCK_SIZE;
     
     /* use one block */
@@ -714,7 +714,6 @@ int	GetFileStatus(const char* szPathName, FileStatus* pStatus){
     pStatus->type = pInode->type;
     for(int i = 0; i < NUM_OF_DIRECT_BLOCK_PTR; i++)
         pStatus->dirBlockPtr[i] = pInode->dirBlockPtr[i];
-    //memcpy(pStatus, pInode, sizeof(pStatus));
     free(pInode);
     free(dir);
     return 0;
