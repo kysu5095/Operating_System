@@ -278,6 +278,17 @@ int WriteFileFunc(char* pBuffer, int length, int block_idx, int dirBlock, Inode*
     free(block);
 }
 
+void UpdateBytemapAndFileSysInfo(int block_idx){
+    /* update block bytemap */
+    SetBlockBytemap(block_idx);   
+
+    /* update file system information block */
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+    pFileSysInfo->numAllocBlocks++;
+    pFileSysInfo->numFreeBlocks--;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+}
+
 int	WriteFile(int fileDesc, char* pBuffer, int length) {
     /* get block index */
     int block_idx;
@@ -303,7 +314,10 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
     /* use one block */
     if(!(length / BLOCK_SIZE)){
         /* create dirBlockPtr */
-        if(pInode->dirBlockPtr[logical_block_idx] == 0) pInode->allocBlocks++;
+        if(pInode->dirBlockPtr[logical_block_idx] == 0){
+            pInode->allocBlocks++;
+            UpdateBytemapAndFileSysInfo(block_idx);     
+        }
         /* overwrite */
         else block_idx = pInode->dirBlockPtr[logical_block_idx];
         WriteFileFunc(pBuffer, length, block_idx, logical_block_idx, pInode);
@@ -312,44 +326,35 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
     else{
         int length_1 = BLOCK_SIZE;
         int length_2 = length_1 - BLOCK_SIZE;
+
+        /* create dirBlockPtr */
+        if(pInode->dirBlockPtr[logical_block_idx] == 0){
+            pInode->allocBlocks++;
+            UpdateBytemapAndFileSysInfo(block_idx);     
+        }
+        /* overwrite */
+        else block_idx = pInode->dirBlockPtr[logical_block_idx];
+        WriteFileFunc(pBuffer, length_1, block_idx, logical_block_idx, pInode);
+        
         /* get additional block index */
         int block_idx2;
         if((block_idx2 = GetFreeBlockNum()) == -1){
             perror("WriteFile : block_idx error");
             return -1;
         }
+        logical_block_idx++;
         /* create dirBlockPtr */
-        if(pInode->dirBlockPtr[logical_block_idx] == 0) pInode->allocBlocks++;
+        if(pInode->dirBlockPtr[logical_block_idx] == 0){
+            pInode->allocBlocks++;
+            UpdateBytemapAndFileSysInfo(block_idx);     
+        }
         /* overwrite */
-        else block_idx = pInode->dirBlockPtr[logical_block_idx];
-        WriteFileFunc(pBuffer, length_1, block_idx, logical_block_idx, pInode);
-        
-        
-        WriteFileFunc(pBuffer + BLOCK_SIZE, length_2, block_idx2, )
+        else block_idx2 = pInode->dirBlockPtr[logical_block_idx];
+        WriteFileFunc(pBuffer + BLOCK_SIZE, length_2, block_idx2, logical_block_idx, pInode);
     }
-    if(pInode->dirBlockPtr[logical_block_idx] == 0) pInode->allocBlocks++;
-    pInode->dirBlockPtr[logical_block_idx] = block_idx;
-    PutInode(fd, pInode);
 
     /* write file */
-    pFileDesc[fileDesc].pOpenFile->fileOffset += BLOCK_SIZE;
-    char* block = (char*)malloc(BLOCK_SIZE);
-    DevReadBlock(block_idx, block);
-    //////////////////////////////
-    /*     block = pBuffer??    */
-    //////////////////////////////
-    //memcpy(block, pBuffer, BLOCK_SIZE);
-    strcpy(block, pBuffer);
-    DevWriteBlock(block_idx, block);
-
-    /* update block bytemap */
-    SetBlockBytemap(block_idx);
-
-    /* update file system information block */
-    DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
-    pFileSysInfo->numAllocBlocks++;
-    pFileSysInfo->numFreeBlocks--;
-    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+    pFileDesc[fileDesc].pOpenFile->fileOffset += length;
     
     free(pInode);
     free(block);
