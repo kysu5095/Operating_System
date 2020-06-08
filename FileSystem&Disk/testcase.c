@@ -208,7 +208,6 @@ void TestCase3(void) {
 				pBuffer1[k] = alphabet[cIndex];
 			memset(pBuffer2, 0, BLOCK_SIZE);
 			ReadFile(fd[j], pBuffer2, BLOCK_SIZE);
-			printf("%s\n", pBuffer2);
 			cIndex++;
 		}
 	}
@@ -284,24 +283,6 @@ void TestCase4(void)
 	printf(" ---- Test Case 4: files of even number re-created & written ----\n");
 
 	ListDirContents("/home/user3");
-
-	for(int i = 0; i < 5; i++){
-		memset(fileName, 0, FILENAME_MAX_LEN);
-		sprintf(fileName, "/home/user3/file%d", i);
-		fd = OpenFile(fileName);
-		memset(pBuffer, 0, 1024);
-		if(i%2==0){
-			ReadFile(fd, pBuffer, 513);
-			printf("file %d : %s\n", i, pBuffer);
-			memset(pBuffer, 0, 1024);
-			ReadFile(fd, pBuffer, 513);
-			printf("file %d : %s\n", i, pBuffer);
-		}
-		else{
-			ReadFile(fd, pBuffer, 513);
-			printf("file %d : %s\n", i, pBuffer);
-		}
-	}
 }
 
 int main(int argc, char** argv)
