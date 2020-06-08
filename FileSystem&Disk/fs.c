@@ -12,44 +12,17 @@ int getPathLen(const char* szDirName){
     return cnt;
 }
 
-// char** pathParsing(const char* name, int* cnt){
-//     char** pathArr  = (char**)malloc(sizeof(char*) * (*cnt));
-//     char*  tempPath = (char* )malloc((int)strlen(name));
-//     //strcpy(tempPath, name);
-//     memcpy(tempPath, name, strlen(name));
-//     char*  ptr = strtok(tempPath, "/");
-//     for(int i = 0; i < (*cnt); i++){
-//         int len = (int)strlen(ptr);
-//         //pathArr[i] = (char*)malloc(sizeof(char) * len);
-//         pathArr[i] = (char*)malloc((int)strlen(ptr));
-//         //strcpy(pathArr[i], ptr);
-//         memcpy(pathArr[i], ptr, strlen(ptr));
-//         ptr = strtok(NULL, "/");
-//     }
-//     free(tempPath);
-//     free(ptr);
-//     return pathArr;
-// }
-
 char** pathParsing(const char* name, int* cnt){
     char** pathArr  = (char**)malloc(sizeof(char*) * (*cnt));
     char*  tempPath = (char* )malloc((int)strlen(name) + 1);
-    //printf("%s  sizeof name : %d  strlen name : %d\n", name, (int)sizeof(name), (int)strlen(name));
     strcpy(tempPath, name);
     char*  ptr = strtok(tempPath, "/");
     for(int i = 0; i < (*cnt); i++){
-        //int len = (int)strlen(ptr);
-        //printf("%s  sizeof ptr : %d  strlen ptr : %d\n", ptr, (int)sizeof(ptr), (int)strlen(ptr));
         pathArr[i] = (char*)malloc((int)strlen(ptr) + 1);
-        //pathArr[i] = (char*)malloc(sizeof(ptr));
-        //strcpy(pathArr[i], ptr);
         strcpy(pathArr[i], ptr);
-        //printf("[%s(%d) , %s(%d)] ", pathArr[i], strlen(pathArr[i]), ptr, strlen(ptr));
         ptr = strtok(NULL, "/");
     }
-    //printf("\n");
     free(tempPath);
-    //free(ptr);
     return pathArr;
 }
 
@@ -269,12 +242,14 @@ int	CloseFile(int fileDesc) {
     pFileDesc[fileDesc].pOpenFile = NULL;
 }
 
-int WriteFileFunc(char* pBuffer, int length, int block_idx, int dirBlock, Inode* pInode){
+int WriteFileFunc(char* pBuffer, int length, int block_idx, int dirBlock, Inode* pInode, File* file){
     char* block = (char*)malloc(BLOCK_SIZE);
+    int offset = (file->fileOffset) % BLOCK_SIZE;
     DevReadBlock(block_idx, block);
-    memcpy(block, pBuffer, length);
+    memcpy(block + offset, pBuffer, length);
     DevWriteBlock(block_idx, block);
     pInode->dirBlockPtr[dirBlock] = block_idx;
+    file->fileOffset += length;
     free(block);
 }
 
@@ -302,22 +277,24 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
         perror("WriteFile : get file descriptor error");
         return -1;
     }
-    int fd = pFileDesc[fileDesc].pOpenFile->inodeNum;
+    File* file = pFileDesc[fileDesc].pOpenFile;
+    int fd = file->inodeNum;
     Inode* pInode = (Inode*)malloc(sizeof(Inode));
     GetInode(fd, pInode);
-    //pInode->size += length;
-    char* block = (char*)malloc(BLOCK_SIZE);
-    int logical_block_idx = (pFileDesc[fileDesc].pOpenFile->fileOffset) / BLOCK_SIZE;
+    char* block = (char*)malloc(BLOCK_SIZE);\
+    int logical_block_idx = (file->fileOffset) / BLOCK_SIZE;
+    
     /* use one block */
     if(length <= BLOCK_SIZE){
         /* create dirBlockPtr */
         if(pInode->dirBlockPtr[logical_block_idx] == 0){
             pInode->allocBlocks++;
+            pInode->size = pInode->allocBlocks * BLOCK_SIZE;
             UpdateBytemapAndFileSysInfo(block_idx);     
         }
         /* overwrite */
         else block_idx = pInode->dirBlockPtr[logical_block_idx];
-        WriteFileFunc(pBuffer, length, block_idx, logical_block_idx, pInode);
+        WriteFileFunc(pBuffer, length, block_idx, logical_block_idx, pInode, file);
     }
     /* use two or more block */
     else{
@@ -327,11 +304,12 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
         /* create dirBlockPtr */
         if(pInode->dirBlockPtr[logical_block_idx] == 0){
             pInode->allocBlocks++;
+            pInode->size = pInode->allocBlocks * BLOCK_SIZE;
             UpdateBytemapAndFileSysInfo(block_idx);     
         }
         /* overwrite */
         else block_idx = pInode->dirBlockPtr[logical_block_idx];
-        WriteFileFunc(pBuffer, length_1, block_idx, logical_block_idx, pInode);
+        WriteFileFunc(pBuffer, length_1, block_idx, logical_block_idx, pInode, file);
         
         /* get additional block index */
         int block_idx2;
@@ -343,15 +321,15 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
         /* create dirBlockPtr */
         if(pInode->dirBlockPtr[logical_block_idx] == 0){
             pInode->allocBlocks++;
+            pInode->size = pInode->allocBlocks * BLOCK_SIZE;
             UpdateBytemapAndFileSysInfo(block_idx2);     
         }
         /* overwrite */
         else block_idx2 = pInode->dirBlockPtr[logical_block_idx];
-        WriteFileFunc(pBuffer + BLOCK_SIZE, length_2, block_idx2, logical_block_idx, pInode);
+        WriteFileFunc(pBuffer + BLOCK_SIZE, length_2, block_idx2, logical_block_idx, pInode, file);
     }
 
-    /* write file */
-    pFileDesc[fileDesc].pOpenFile->fileOffset += length;
+    /* write inode */
     PutInode(fd, pInode);
     
     free(pInode);
@@ -530,11 +508,6 @@ int	RemoveDir(const char* szDirName) {
     /* path parsing */
     int cnt = getPathLen(szDirName);
     char** pathArr = pathParsing(szDirName, &cnt);
-    // printf("Remove Dir\n");
-    // for(int i = 0; i < cnt; i++){
-    //     printf("%s ", pathArr[i]);
-    // }
-    // printf("\n");
     int entry_idx, parent_block_idx;
     if((entry_idx = dirParsing(pathArr, 0, cnt, &parent_inode_idx, &parent_block_idx, dir, pInode, 1)) == -1){
         perror("RemoveDir : no parent directory");
@@ -546,7 +519,6 @@ int	RemoveDir(const char* szDirName) {
     DevReadBlock(parent_block_idx, (char*)childDir);
 
     GetInode(childDir[entry_idx].inodeNum, pInode);
-    //GetInode(ptr, pInode);
     int block_idx;
     for(int ptr = 0; ptr < NUM_OF_DIRECT_BLOCK_PTR; ptr++){
         if(pInode->dirBlockPtr[ptr] == 0) continue;
@@ -575,9 +547,6 @@ int	RemoveDir(const char* szDirName) {
         DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
     }
 
-    ////////////////////////////////////////////
-    //             재귀로 변경하기
-    ////////////////////////////////////////////
     /* decrease capacity of the all parent directory inode*/
     Inode* parentInode = (Inode*)malloc(sizeof(Inode));
     GetInode(parent_inode_idx, parentInode);
