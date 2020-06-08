@@ -113,7 +113,6 @@ void TestCase1(void)
 	RemoveDir("/tmp");
 }
 
-
 void TestCase2(void)
 {
 	int i;
@@ -124,7 +123,6 @@ void TestCase2(void)
 
 	memset(fileName, 0, FILENAME_MAX_LEN);
 	memset(tempName, 0, FILENAME_MAX_LEN);
-
 	sprintf(fileName, "/dir");
 	MakeDir(fileName);
 
@@ -286,6 +284,7 @@ void TestCase4(void)
 
 	ListDirContents("/home/user3");
 }
+
 int main(int argc, char** argv)
 {
 	int TcNum;
