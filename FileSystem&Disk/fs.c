@@ -273,7 +273,7 @@ int WriteFileFunc(char* pBuffer, int length, int block_idx, int dirBlock, Inode*
     char* block = (char*)malloc(BLOCK_SIZE);
     DevReadBlock(block_idx, block);
     memcpy(block, pBuffer, length);
-    DevReadBlock(block_idx, block);
+    DevWriteBlock(block_idx, block);
     pInode->dirBlockPtr[dirBlock] = block_idx;
     free(block);
 }
@@ -308,11 +308,8 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
     //pInode->size += length;
     char* block = (char*)malloc(BLOCK_SIZE);
     int logical_block_idx = (pFileDesc[fileDesc].pOpenFile->fileOffset) / BLOCK_SIZE;
-    int file_offset = length % BLOCK_SIZE;
-    //if((file_offset % BLOCK_SIZE) + length <= BLOCK_SIZE){
-    
     /* use one block */
-    if(!(length / BLOCK_SIZE)){
+    if(length <= BLOCK_SIZE){
         /* create dirBlockPtr */
         if(pInode->dirBlockPtr[logical_block_idx] == 0){
             pInode->allocBlocks++;
@@ -346,7 +343,7 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
         /* create dirBlockPtr */
         if(pInode->dirBlockPtr[logical_block_idx] == 0){
             pInode->allocBlocks++;
-            UpdateBytemapAndFileSysInfo(block_idx);     
+            UpdateBytemapAndFileSysInfo(block_idx2);     
         }
         /* overwrite */
         else block_idx2 = pInode->dirBlockPtr[logical_block_idx];
@@ -355,6 +352,7 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
 
     /* write file */
     pFileDesc[fileDesc].pOpenFile->fileOffset += length;
+    PutInode(fd, pInode);
     
     free(pInode);
     free(block);
@@ -375,7 +373,6 @@ int	ReadFile(int fileDesc, char* pBuffer, int length) {
     DevReadBlock(pInode->dirBlockPtr[logical_block_idx], (char*)block);
     memcpy(pBuffer, block, length);
     DevWriteBlock(pInode->dirBlockPtr[logical_block_idx], (char*)block);
-
     /* update file descriptor */
     pFileDesc[fileDesc].pOpenFile->fileOffset += BLOCK_SIZE;
 
@@ -411,6 +408,22 @@ int	RemoveFile(const char* szFileName) {
     /* delete file */
     /* reinitialize directory inode and update inode bytemap */
     GetInode(dir[entry_idx].inodeNum, pInode);
+    for(int i = 0; i < NUM_OF_DIRECT_BLOCK_PTR; i++){
+        if(pInode->dirBlockPtr[i] == 0) continue;
+        char* block = (char*)malloc(BLOCK_SIZE);
+        DevReadBlock(pInode->dirBlockPtr[i], block);
+        memset(block, 0, BLOCK_SIZE);
+        DevWriteBlock(pInode->dirBlockPtr[i], block);
+        ResetBlockBytemap(pInode->dirBlockPtr[i]);
+
+        /* update file system information block */
+        DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+        pFileSysInfo->numAllocBlocks--;
+        pFileSysInfo->numFreeBlocks++;
+        DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+
+        free(block);
+    }
     memset(pInode, 0, sizeof(Inode));
     PutInode(dir[entry_idx].inodeNum, pInode);
     ResetInodeBytemap(dir[entry_idx].inodeNum);
