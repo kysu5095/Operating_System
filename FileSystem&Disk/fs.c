@@ -12,21 +12,44 @@ int getPathLen(const char* szDirName){
     return cnt;
 }
 
+// char** pathParsing(const char* name, int* cnt){
+//     char** pathArr  = (char**)malloc(sizeof(char*) * (*cnt));
+//     char*  tempPath = (char* )malloc((int)strlen(name));
+//     //strcpy(tempPath, name);
+//     memcpy(tempPath, name, strlen(name));
+//     char*  ptr = strtok(tempPath, "/");
+//     for(int i = 0; i < (*cnt); i++){
+//         int len = (int)strlen(ptr);
+//         //pathArr[i] = (char*)malloc(sizeof(char) * len);
+//         pathArr[i] = (char*)malloc((int)strlen(ptr));
+//         //strcpy(pathArr[i], ptr);
+//         memcpy(pathArr[i], ptr, strlen(ptr));
+//         ptr = strtok(NULL, "/");
+//     }
+//     free(tempPath);
+//     free(ptr);
+//     return pathArr;
+// }
+
 char** pathParsing(const char* name, int* cnt){
     char** pathArr  = (char**)malloc(sizeof(char*) * (*cnt));
-    char*  tempPath = (char* )malloc(sizeof((int)strlen(name)));
+    char*  tempPath = (char* )malloc((int)strlen(name) + 1);
+    //printf("%s  sizeof name : %d  strlen name : %d\n", name, (int)sizeof(name), (int)strlen(name));
     strcpy(tempPath, name);
     char*  ptr = strtok(tempPath, "/");
     for(int i = 0; i < (*cnt); i++){
-        int len = (int)strlen(ptr);
-        pathArr[i] = (char*)malloc(sizeof(char) * len);
+        //int len = (int)strlen(ptr);
+        //printf("%s  sizeof ptr : %d  strlen ptr : %d\n", ptr, (int)sizeof(ptr), (int)strlen(ptr));
+        pathArr[i] = (char*)malloc((int)strlen(ptr) + 1);
         //pathArr[i] = (char*)malloc(sizeof(ptr));
         //strcpy(pathArr[i], ptr);
         strcpy(pathArr[i], ptr);
+        //printf("[%s(%d) , %s(%d)] ", pathArr[i], strlen(pathArr[i]), ptr, strlen(ptr));
         ptr = strtok(NULL, "/");
     }
+    //printf("\n");
     free(tempPath);
-    free(ptr);
+    //free(ptr);
     return pathArr;
 }
 
@@ -41,7 +64,6 @@ int dirParsing(char** path, int cnt, int last, int* inode_idx, int* block_idx, D
                 /* termination condition */
                 if(cnt == last - 1) {
                     if(flag == 0){
-                        printf("%s // %s\n", path[cnt], dir[idx].name);
                         perror("dirParsing : already exist directory name or file name");
                         return -1;
                     }
@@ -108,12 +130,10 @@ void getPtrIndex(Inode* pInode, DirEntry* dir, int* inode_idx, int* block_ptr, i
             SetBlockBytemap(block_idx);
 
             /* update file system information */
-            FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
-            DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-            fileSysInfo->numAllocBlocks++;
-            fileSysInfo->numFreeBlocks--;
-            DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-            free(fileSysInfo);
+            DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+            pFileSysInfo->numAllocBlocks++;
+            pFileSysInfo->numFreeBlocks--;
+            DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
             
             *block_ptr = ptr;
             *idx = 1;
@@ -179,10 +199,9 @@ int	CreateFile(const char* szFileName) {
     SetInodeBytemap(inode_idx);
 
     /* update file system information block */
-    FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
-    DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-    fileSysInfo->numAllocInodes++;
-    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+    pFileSysInfo->numAllocInodes++;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
 
     /* set file descriptor and file object */
     File* file = (File*)malloc(sizeof(File));
@@ -201,7 +220,6 @@ int	CreateFile(const char* szFileName) {
     /* memory release */
     free(pInode);
     free(dir);
-    free(fileSysInfo);
     free(file);
     freeMemory(pathArr, cnt);
     return index;
@@ -251,6 +269,15 @@ int	CloseFile(int fileDesc) {
     pFileDesc[fileDesc].pOpenFile = NULL;
 }
 
+int WriteFileFunc(char* pBuffer, int length, int block_idx, int dirBlock, Inode* pInode){
+    char* block = (char*)malloc(BLOCK_SIZE);
+    DevReadBlock(block_idx, block);
+    memcpy(block, pBuffer, length);
+    DevReadBlock(block_idx, block);
+    pInode->dirBlockPtr[dirBlock] = block_idx;
+    free(block);
+}
+
 int	WriteFile(int fileDesc, char* pBuffer, int length) {
     /* get block index */
     int block_idx;
@@ -267,7 +294,40 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
     int fd = pFileDesc[fileDesc].pOpenFile->inodeNum;
     Inode* pInode = (Inode*)malloc(sizeof(Inode));
     GetInode(fd, pInode);
+    //pInode->size += length;
+    char* block = (char*)malloc(BLOCK_SIZE);
     int logical_block_idx = (pFileDesc[fileDesc].pOpenFile->fileOffset) / BLOCK_SIZE;
+    int file_offset = length % BLOCK_SIZE;
+    //if((file_offset % BLOCK_SIZE) + length <= BLOCK_SIZE){
+    
+    /* use one block */
+    if(!(length / BLOCK_SIZE)){
+        /* create dirBlockPtr */
+        if(pInode->dirBlockPtr[logical_block_idx] == 0) pInode->allocBlocks++;
+        /* overwrite */
+        else block_idx = pInode->dirBlockPtr[logical_block_idx];
+        WriteFileFunc(pBuffer, length, block_idx, logical_block_idx, pInode);
+    }
+    /* use two or more block */
+    else{
+        int length_1 = BLOCK_SIZE;
+        int length_2 = length_1 - BLOCK_SIZE;
+        /* get additional block index */
+        int block_idx2;
+        if((block_idx2 = GetFreeBlockNum()) == -1){
+            perror("WriteFile : block_idx error");
+            return -1;
+        }
+        /* create dirBlockPtr */
+        if(pInode->dirBlockPtr[logical_block_idx] == 0) pInode->allocBlocks++;
+        /* overwrite */
+        else block_idx = pInode->dirBlockPtr[logical_block_idx];
+        WriteFileFunc(pBuffer, length_1, block_idx, logical_block_idx, pInode);
+        
+        
+        WriteFileFunc(pBuffer + BLOCK_SIZE, length_2, block_idx2, )
+    }
+    if(pInode->dirBlockPtr[logical_block_idx] == 0) pInode->allocBlocks++;
     pInode->dirBlockPtr[logical_block_idx] = block_idx;
     PutInode(fd, pInode);
 
@@ -278,22 +338,21 @@ int	WriteFile(int fileDesc, char* pBuffer, int length) {
     //////////////////////////////
     /*     block = pBuffer??    */
     //////////////////////////////
-    memcpy(block, pBuffer, sizeof(pBuffer));
+    //memcpy(block, pBuffer, BLOCK_SIZE);
+    strcpy(block, pBuffer);
     DevWriteBlock(block_idx, block);
 
     /* update block bytemap */
     SetBlockBytemap(block_idx);
 
     /* update file system information block */
-    FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
-    DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-    fileSysInfo->numAllocBlocks++;
-    fileSysInfo->numFreeBlocks--;
-    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+    pFileSysInfo->numAllocBlocks++;
+    pFileSysInfo->numFreeBlocks--;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
     
     free(pInode);
     free(block);
-    free(fileSysInfo);
     return length;
 }
 
@@ -309,11 +368,13 @@ int	ReadFile(int fileDesc, char* pBuffer, int length) {
     int logical_block_idx = (pFileDesc[fileDesc].pOpenFile->fileOffset) / BLOCK_SIZE;
     char* block = (char*)malloc(BLOCK_SIZE);
     DevReadBlock(pInode->dirBlockPtr[logical_block_idx], (char*)block);
-    memcpy(pBuffer, block, sizeof(block));
+    memcpy(pBuffer, block, BLOCK_SIZE);
 
     /* update file descriptor */
     pFileDesc[fileDesc].pOpenFile->fileOffset += BLOCK_SIZE;
 
+    free(pInode);
+    free(block);
     return length;
 }
 
@@ -354,14 +415,12 @@ int	RemoveFile(const char* szFileName) {
     DevWriteBlock(parent_block_idx, (char*)dir);
 
     /* update file system information block */
-    FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
-    DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-    fileSysInfo->numAllocInodes--;
-    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+    pFileSysInfo->numAllocInodes--;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
 
     free(pInode);
     free(dir);
-    free(fileSysInfo);
     return 0;
 }
 
@@ -371,7 +430,6 @@ int	MakeDir(const char* szDirName) {
     GetInode(0, pInode);
     DirEntry* dir = (DirEntry*)malloc(sizeof(DirEntry) * NUM_OF_DIRENT_PER_BLOCK);
     int idx, parent_block_idx = 0, parent_inode_idx = 0, blockPtr;
-
     /* path parsing */
     int cnt = getPathLen(szDirName);
     char** pathArr = pathParsing(szDirName, &cnt);
@@ -430,17 +488,15 @@ int	MakeDir(const char* szDirName) {
     SetBlockBytemap(block_idx);
 
     /* update file system information block */
-    FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
-    DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-    fileSysInfo->numAllocBlocks++;
-    fileSysInfo->numFreeBlocks--;
-    fileSysInfo->numAllocInodes++;
-    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+    pFileSysInfo->numAllocBlocks++;
+    pFileSysInfo->numFreeBlocks--;
+    pFileSysInfo->numAllocInodes++;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
 
     /* memory release */
     free(dir);
     free(newDir);
-    free(fileSysInfo);
     freeMemory(pathArr, cnt);
     return 0;
 }
@@ -455,6 +511,11 @@ int	RemoveDir(const char* szDirName) {
     /* path parsing */
     int cnt = getPathLen(szDirName);
     char** pathArr = pathParsing(szDirName, &cnt);
+    // printf("Remove Dir\n");
+    // for(int i = 0; i < cnt; i++){
+    //     printf("%s ", pathArr[i]);
+    // }
+    // printf("\n");
     int entry_idx, parent_block_idx;
     if((entry_idx = dirParsing(pathArr, 0, cnt, &parent_inode_idx, &parent_block_idx, dir, pInode, 1)) == -1){
         perror("RemoveDir : no parent directory");
@@ -480,7 +541,6 @@ int	RemoveDir(const char* szDirName) {
         }
     }
 
-    FileSysInfo* fileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
     for(int ptr = 0; ptr < NUM_OF_DIRECT_BLOCK_PTR; ptr++){
         if(pInode->dirBlockPtr[ptr] == 0) continue;
         block_idx = pInode->dirBlockPtr[ptr];
@@ -490,10 +550,10 @@ int	RemoveDir(const char* szDirName) {
         ResetBlockBytemap(block_idx);
 
         pInode->dirBlockPtr[ptr] = 0;
-        DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-        fileSysInfo->numAllocBlocks--;
-        fileSysInfo->numFreeBlocks++;
-        DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+        DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+        pFileSysInfo->numAllocBlocks--;
+        pFileSysInfo->numFreeBlocks++;
+        DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
     }
 
     ////////////////////////////////////////////
@@ -517,16 +577,14 @@ int	RemoveDir(const char* szDirName) {
     dir[entry_idx].inodeNum = 0;
     DevWriteBlock(parent_block_idx, (char*)dir);
 
-    DevReadBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
-    fileSysInfo->numAllocInodes--;
-    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)fileSysInfo);
+    DevReadBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
+    pFileSysInfo->numAllocInodes--;
+    DevWriteBlock(FILESYS_INFO_BLOCK, (char*)pFileSysInfo);
 
     free(dir);
     free(childDir);
     free(pInode);
     free(parentInode);
-    free(fileSysInfo);
-
     return 0;
 }
 
@@ -542,7 +600,7 @@ int EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dirEn
     char** pathArr = pathParsing(szDirName, &cnt);
     int entry_idx;
     if((entry_idx = dirParsing(pathArr, 0, cnt, &parent_inode_idx, &parent_block_idx, dir, pInode, 1)) == -1){
-        perror("RemoveDir : no parent directory");
+        perror("EnumerateDirStatus : no parent directory");
         return -1;
     }
 
@@ -604,8 +662,8 @@ void CreateFileSystem() {
     pFileSysInfo->blocks            = BLOCK_SIZE;
     pFileSysInfo->rootInodeNum      = inode_idx;
     pFileSysInfo->diskCapacity      = FS_DISK_CAPACITY;
-    pFileSysInfo->numAllocBlocks    = 7;
-    pFileSysInfo->numFreeBlocks     = BLOCK_SIZE - 7;    
+    pFileSysInfo->numAllocBlocks    = 6;
+    pFileSysInfo->numFreeBlocks     = BLOCK_SIZE - 6;    
     pFileSysInfo->numAllocInodes    = 0;
     pFileSysInfo->blockBytemapBlock = BLOCK_BYTEMAP_BLOCK_NUM;
     pFileSysInfo->inodeBytemapBlock = INODE_BYTEMAP_BLOCK_NUM;
@@ -636,6 +694,8 @@ void CreateFileSystem() {
 
 void OpenFileSystem() {
     DevOpenDisk();
+    pFileSysInfo = (FileSysInfo*)malloc(BLOCK_SIZE);
+    memset(pFileSysInfo, 0, BLOCK_SIZE);
     DevReadBlock(0, (char*)pFileSysInfo);
 }
 
