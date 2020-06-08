@@ -373,7 +373,8 @@ int	ReadFile(int fileDesc, char* pBuffer, int length) {
     int logical_block_idx = (pFileDesc[fileDesc].pOpenFile->fileOffset) / BLOCK_SIZE;
     char* block = (char*)malloc(BLOCK_SIZE);
     DevReadBlock(pInode->dirBlockPtr[logical_block_idx], (char*)block);
-    memcpy(pBuffer, block, BLOCK_SIZE);
+    memcpy(pBuffer, block, length);
+    DevWriteBlock(pInode->dirBlockPtr[logical_block_idx], (char*)block);
 
     /* update file descriptor */
     pFileDesc[fileDesc].pOpenFile->fileOffset += BLOCK_SIZE;
