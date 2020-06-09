@@ -347,21 +347,21 @@ int	ReadFile(int fileDesc, char* pBuffer, int length) {
     int offset = (file->fileOffset) % BLOCK_SIZE;
     /* read one block */
     if(offset + length <= BLOCK_SIZE){
-        DevReadBlock(logical_block_idx, block);
+        DevReadBlock(pInode->dirBlockPtr[logical_block_idx], block);
         memcpy(pBuffer, block + offset, length);
-        DevWriteBlock(logical_block_idx, block);
+        DevWriteBlock(pInode->dirBlockPtr[logical_block_idx], block);
     }
     /* read two or more block */
     else{
         int length_1 = BLOCK_SIZE - offset;
         int length_2 = length - length_1;
-        DevReadBlock(logical_block_idx, block);
+        DevReadBlock(pInode->dirBlockPtr[logical_block_idx], block);
         memcpy(pBuffer, block + offset, length_1);
-        DevWriteBlock(logical_block_idx, block);
+        DevWriteBlock(pInode->dirBlockPtr[logical_block_idx], block);
         logical_block_idx++;
-        DevReadBlock(logical_block_idx, block);
+        DevReadBlock(pInode->dirBlockPtr[logical_block_idx], block);
         memcpy(pBuffer + length_1, block, length_2);
-        DevWriteBlock(logical_block_idx, block);
+        DevWriteBlock(pInode->dirBlockPtr[logical_block_idx], block);
     }
 
     /* update file descriptor */
