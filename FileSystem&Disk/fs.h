@@ -105,7 +105,7 @@ void		OpenFileSystem();
 void		CloseFileSystem();
 int		GetFileStatus(const char* szPathName, FileStatus* pStatus);
 
-FileSysInfo* pFileSysInfo;
+extern FileSysInfo* pFileSysInfo;
 
 void FileSysInit(void);	
 
