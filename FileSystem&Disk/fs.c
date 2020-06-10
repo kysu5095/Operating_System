@@ -613,7 +613,7 @@ int EnumerateDirStatus(const char* szDirName, DirEntryInfo* pDirEntry, int dirEn
         if(count == dirEntrys) break;
         if(pInode->dirBlockPtr[ptr] == 0) continue;
         DevReadBlock(pInode->dirBlockPtr[ptr], (char*)dir);
-        for(int i = 2; i < NUM_OF_DIRENT_PER_BLOCK; i++){
+        for(int i = 0; i < NUM_OF_DIRENT_PER_BLOCK; i++){
             if(strcmp(dir[i].name, "null") == 0) continue;
             memcpy(pDirEntry[count].name, dir[i].name, sizeof(dir[i].name));
             pDirEntry[count].inodeNum = dir[i].inodeNum;
