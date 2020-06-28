@@ -1,5 +1,28 @@
 #include "MsgQueue.h"
 
+
+/* 출처 : https://gist.github.com/zainulhasan/30b8078d73eab9af7226 */
+void insertQcb(pmpd_t mqd, Message* msg){
+    Qcb* qcb = qcbTblEntry[mqd].pQcb;
+    Message* cur = qcb->pMsgHead;
+    Message* pre = cur;
+    if(qcb->pMsgHead == NULL){
+        qcb->pMsgHead = qcb->pMsgTail = msg;
+        //////////////////////////////
+        /* msg도 next pre 해야하나,, */
+        //////////////////////////////
+    }
+    else{
+        while(cur != NULL && cur->priority >= msg->priority){
+            pre = cur;
+            cur = cur->pNext;
+        }
+        pre->pNext = msg;
+        msg->pPrev = pre;
+        msg->pNext = cur;
+    }
+}
+
 pmqd_t pmq_open(const char* name, int flags, mode_t perm, pmq_attr* attr) {
     /* check message queue */
     for(int i = 0; i < MAX_QCB_NUM; i++){
@@ -54,8 +77,17 @@ int pmq_close(pmqd_t mqd) {
     }
     return 0;
 }
-int pmq_send(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int msg_prio) {
 
+int pmq_send(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int msg_prio) {
+    /* create message */
+    Message* msg = (Message*)malloc(sizeof(Message));
+    strcpy(msg->data, msg_ptr);
+    msg->size = (int)msg_len;
+    msg->priority = msg_prio;
+    msg->pNext = NULL;
+    msg->pPrev = NULL;
+    insertQcb(mqd, msg);
+    return 0;
 }
 ssize_t pmq_receive(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int* msg_prio)
     
