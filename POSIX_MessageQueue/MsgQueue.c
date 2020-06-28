@@ -15,7 +15,7 @@ pmqd_t pmq_open(const char* name, int flags, mode_t perm, pmq_attr* attr) {
         }
     }
     if(num == -1){
-        perror("no empty row");
+        perror("pmq_open : no empty row");
         return -1;
     }
     /* create Qcb */  
@@ -36,7 +36,23 @@ pmqd_t pmq_open(const char* name, int flags, mode_t perm, pmq_attr* attr) {
 }
 
 int pmq_close(pmqd_t mqd) {
-
+    if(qcbTblEntry[mqd].bUsed == 0){
+        perror("pmq_close : qcbTblEntry is not used");
+        return -1;
+    }
+    qcbTblEntry[mqd].openCount--;
+    if(qcbTblEntry[mqd].openCount == 0){
+        strcpy(qcbTblEntry[mqd].name, "null");
+        qcbTblEntry[mqd].mode = 0;
+        qcbTblEntry[mqd].openCount = 0;
+        /////////////////////////////////////////////////
+        /* Qcb안에 있는 내용물들도 free하는 구문 추가하기 */
+        /////////////////////////////////////////////////
+        free(qcbTblEntry[mqd].pQcb);
+        qcbTblEntry[mqd].pQcb = NULL;
+        qcbTblEntry[mqd].bUsed = 0;
+    }
+    return 0;
 }
 int pmq_send(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int msg_prio) {
 
