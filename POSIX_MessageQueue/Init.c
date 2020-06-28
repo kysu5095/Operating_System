@@ -8,7 +8,7 @@
 //////////////////////////////////
 void Init(void) {
     for(int i = 0; i < MAX_QCB_NUM; i++){
-        qcbTblEntry[i].name = "null";
+        strcpy(qcbTblEntry[i].name, "null");
         qcbTblEntry[i].mode = 0;
         qcbTblEntry[i].openCount = 0;
         qcbTblEntry[i].pQcb = NULL;
