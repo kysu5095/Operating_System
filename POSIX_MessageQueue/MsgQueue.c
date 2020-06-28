@@ -1,6 +1,6 @@
 #include "MsgQueue.h"
 
-void insertQcb(pmpd_t mqd, Message* msg){
+void insertQcb(pmqd_t mqd, Message* msg){
     Qcb* qcb = qcbTblEntry[mqd].pQcb;
     qcb->msgCount++;
     /* Head */
@@ -11,7 +11,7 @@ void insertQcb(pmpd_t mqd, Message* msg){
     }
     else{
         Message* cur = qcb->pMsgHead->pNext;
-        while(cur != NULL || cur >= msg->priority)
+        while(cur != NULL || cur->priority >= msg->priority)
             cur = cur->pNext;
         /* Tail */
         if(cur == NULL){
