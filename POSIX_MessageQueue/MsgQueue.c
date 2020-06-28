@@ -32,6 +32,7 @@ pmqd_t pmq_open(const char* name, int flags, mode_t perm, pmq_attr* attr) {
     qcbTblEntry[num].openCount++;
     qcbTblEntry[num].pQcb = qcb;
     qcbTblEntry[num].bUsed = 1;
+    return num;
 }
 
 int pmq_close(pmqd_t mqd) {
