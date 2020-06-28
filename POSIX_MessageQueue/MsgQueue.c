@@ -1,25 +1,46 @@
 #include "MsgQueue.h"
 
-
-/* 출처 : https://gist.github.com/zainulhasan/30b8078d73eab9af7226 */
 void insertQcb(pmpd_t mqd, Message* msg){
     Qcb* qcb = qcbTblEntry[mqd].pQcb;
-    Message* cur = qcb->pMsgHead;
-    Message* pre = cur;
+    qcb->msgCount++;
+    /* Head */
     if(qcb->pMsgHead == NULL){
-        qcb->pMsgHead = qcb->pMsgTail = msg;
-        //////////////////////////////
-        /* msg도 next pre 해야하나,, */
-        //////////////////////////////
+        qcb->pMsgHead = msg;
+        qcb->pMsgHead->pPrev = NULL;
+        qcb->pMsgHead->pNext = NULL;
     }
     else{
-        while(cur != NULL && cur->priority >= msg->priority){
-            pre = cur;
+        Message* cur = qcb->pMsgHead->pNext;
+        while(cur != NULL || cur >= msg->priority)
             cur = cur->pNext;
+        /* Tail */
+        if(cur == NULL){
+            if(qcb->pMsgTail == NULL){
+                qcb->pMsgTail = msg;
+                qcb->pMsgHead->pNext = qcb->pMsgTail;
+                qcb->pMsgTail->pPrev = qcb->pMsgHead;
+                qcb->pMsgTail->pNext = NULL;
+            }
+            else{
+                Message* newMsg = (Message*)malloc(sizeof(Message));
+                strcpy(newMsg->data, qcb->pMsgTail->data);
+                newMsg->size = qcb->pMsgTail->size;
+                newMsg->priority = qcb->pMsgTail->priority;
+                newMsg->pPrev = qcb->pMsgTail->pPrev;
+                qcb->pMsgTail->pPrev->pNext = newMsg;
+                qcb->pMsgTail = msg;
+                qcb->pMsgTail->pPrev = newMsg;
+                qcb->pMsgTail->pNext = NULL;
+                newMsg->pNext = qcb->pMsgTail;
+            }
         }
-        pre->pNext = msg;
-        msg->pPrev = pre;
-        msg->pNext = cur;
+        /* Other case */
+        else{
+            cur->pPrev->pNext = msg;
+            msg->pPrev = cur->pPrev;
+            msg->pNext = cur;
+            cur->pPrev = msg;
+        }
     }
 }
 
