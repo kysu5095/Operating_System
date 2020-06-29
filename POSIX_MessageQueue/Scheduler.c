@@ -121,33 +121,44 @@ int RunScheduler(void) {
 		alarm(TIMESLICE);
 	}
 	else {
-		/* when the thread first enter the cpu */
-		if (pCurrentThread == NULL) {
-			pCurrentThread = GetThreadFromReady();
-			pCurrentThread->status = THREAD_STATUS_RUN;
-			kill(pCurrentThread->pid, SIGCONT);
-			alarm(TIMESLICE);
-		}
-		else {
-			int nPriority = (int)get_priorityFromReady();
-			/* no scheduling */
-			if (nPriority > pCurrentThread->priority) {
-				kill(pCurrentThread->pid, SIGCONT);
-				alarm(TIMESLICE);
-			}
-			/* scheduling */
-			else {
-				/* insert cpu thread to ready queue */
-				pCurrentThread->status = THREAD_STATUS_READY;
-				InsertThreadToReady(pCurrentThread);
+		// /* when the thread first enter the cpu */
+		// if (pCurrentThread == NULL) {
+		// 	pCurrentThread = GetThreadFromReady();
+		// 	pCurrentThread->status = THREAD_STATUS_RUN;
+		// 	kill(pCurrentThread->pid, SIGCONT);
+		// 	alarm(TIMESLICE);
+		// }
+		// else {
+		// 	int nPriority = (int)get_priorityFromReady();
+		// 	/* no scheduling */
+		// 	if (nPriority > pCurrentThread->priority) {
+		// 		kill(pCurrentThread->pid, SIGCONT);
+		// 		alarm(TIMESLICE);
+		// 	}
+		// 	/* scheduling */
+		// 	else {
+		// 		/* insert cpu thread to ready queue */
+		// 		pCurrentThread->status = THREAD_STATUS_READY;
+		// 		InsertThreadToReady(pCurrentThread);
 
-				/* get new cpu thread from ready queue */
-				Thread* nThread = (Thread*)malloc(sizeof(Thread));
-				nThread = GetThreadFromReady();
+		// 		/* get new cpu thread from ready queue */
+		// 		Thread* nThread = (Thread*)malloc(sizeof(Thread));
+		// 		nThread = GetThreadFromReady();
 				
-				__ContextSwitch((int)pCurrentThread->pid, (int)nThread->pid);
-			}
-		}
+		// 		__ContextSwitch((int)pCurrentThread->pid, (int)nThread->pid);
+		// 	}
+		// }
+        /* main thread */
+        if(pCurrentThread->priority != 0){
+            /* insert cpu thread to ready queue */
+            pCurrentThread->status = THREAD_STATUS_READY;
+            InsertThreadToReady(pCurrentThread);
+        }
+        /* scheduling */
+        /* get new cpu thread from ready queue */
+        Thread* nThread = (Thread*)malloc(sizeof(Thread));
+        nThread = GetThreadFromReady();
+        __ContextSwitch((int)pCurrentThread->pid, (int)nThread->pid);
 	}
 	return 0;
 }
