@@ -1,46 +1,27 @@
 #include "MsgQueue.h"
+#include <string.h>
+#include <stdio.h>
 
 void insertQcb(pmqd_t mqd, Message* msg){
     Qcb* qcb = qcbTblEntry[mqd].pQcb;
     qcb->msgCount++;
-    /* Head */
+    /* head */
     if(qcb->pMsgHead == NULL){
-        qcb->pMsgHead = msg;
+        qcb->pMsgHead->pNext = msg;
         qcb->pMsgHead->pPrev = NULL;
-        qcb->pMsgHead->pNext = NULL;
+        qcb->pMsgTail->pPrev = msg;
+        qcb->pMsgTail->pNext = NULL;
+        msg->pPrev = qcb->pMsgHead;
+        msg->pNext = qcb->pMsgTail;
     }
     else{
         Message* cur = qcb->pMsgHead->pNext;
-        while(cur != NULL || cur->priority >= msg->priority)
+        while(cur != NULL && cur->priority >= msg->priority)
             cur = cur->pNext;
-        /* Tail */
-        if(cur == NULL){
-            if(qcb->pMsgTail == NULL){
-                qcb->pMsgTail = msg;
-                qcb->pMsgHead->pNext = qcb->pMsgTail;
-                qcb->pMsgTail->pPrev = qcb->pMsgHead;
-                qcb->pMsgTail->pNext = NULL;
-            }
-            else{
-                Message* newMsg = (Message*)malloc(sizeof(Message));
-                strcpy(newMsg->data, qcb->pMsgTail->data);
-                newMsg->size = qcb->pMsgTail->size;
-                newMsg->priority = qcb->pMsgTail->priority;
-                newMsg->pPrev = qcb->pMsgTail->pPrev;
-                qcb->pMsgTail->pPrev->pNext = newMsg;
-                qcb->pMsgTail = msg;
-                qcb->pMsgTail->pPrev = newMsg;
-                qcb->pMsgTail->pNext = NULL;
-                newMsg->pNext = qcb->pMsgTail;
-            }
-        }
-        /* Other case */
-        else{
-            cur->pPrev->pNext = msg;
-            msg->pPrev = cur->pPrev;
-            msg->pNext = cur;
-            cur->pPrev = msg;
-        }
+        msg->pPrev = cur->pPrev;
+        msg->pNext = cur;
+        cur->pPrev->pNext = msg;
+        cur->pPrev = msg;
     }
 }
 
@@ -110,6 +91,12 @@ int pmq_send(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int msg_prio) {
     insertQcb(mqd, msg);
     return 0;
 }
-ssize_t pmq_receive(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int* msg_prio)
-    
+
+ssize_t pmq_receive(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int* msg_prio) {
+    if(qcbTblEntry[mqd].bUsed == 0){
+        perror("pmq_receive : qcbTblEntry is not used");
+        return -1;
+    }
+    Qcb* qcb = qcbTblEntry[mqd].pQcb;
+    Message* msg = qcb->pMsgHead;
 }
