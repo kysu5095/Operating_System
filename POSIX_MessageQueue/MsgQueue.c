@@ -36,8 +36,31 @@ Message* deleteQcb(pmqd_t mqd){
     return msg;
 }
 
-void insertThread(pmqd_t mqd){
+void insertThread(pmqd_t mqd, Thread* pThread){
+    Qcb* qcb = qcbTblEntry[mqd].pQcb;
+    qcb->waitThreadCount++;
+    /* wait list is empty */
+    if(qcb->pWaitQHead->phNext == qcb->pWaitQTail){
+        qcb->pWaitQHead->phNext = pThread;
+        qcb->pWaitQTail->phPrev = pThread;
+        pThread->phPrev = qcb->pWaitQHead;
+        pThread->phNext = qcb->pWaitQTail;
+    }
+    else{
+        qcb->pWaitQTail->phPrev->phNext = pThread;
+        pThread->phPrev = qcb->pWaitQTail->phPrev;
+        pThread->phNext = qcb->pWaitQTail;
+        qcb->pWaitQTail->phPrev = pThread;
+    }
+}
 
+void deleteThread(pmqd_t mqd){
+    Qcb* qcb = qcbTblEntry[mqd].pQcb;
+    if(qcb->waitThreadCount == 0) return;
+    Thread* pThread = qcb->pWaitQHead->phNext;
+    qcb->pWaitQHead->phNext = pThread->phNext;
+    pThread->phNext->phPrev = qcb->pWaitQHead;
+    InsertThreadToTail(pThread);
 }
 
 pmqd_t pmq_open(const char* name, int flags, mode_t perm, pmq_attr* attr) {
@@ -106,6 +129,10 @@ int pmq_close(pmqd_t mqd) {
 }
 
 int pmq_send(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int msg_prio) {
+    if(qcbTblEntry[mqd].bUsed == 0){
+        perror("pmq_send : qcbTblEntry is not used");
+        return -1;
+    }
     /* create message */
     Message* msg = (Message*)malloc(sizeof(Message));
     strcpy(msg->data, msg_ptr);
@@ -114,9 +141,8 @@ int pmq_send(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int msg_prio) {
     msg->pNext = NULL;
     msg->pPrev = NULL;
     insertQcb(mqd, msg);
-    /////////////////////////
-    /* Waiting Thread 찾기 */
-    /////////////////////////
+    deleteQcb(mqd);
+    
     return 0;
 }
 
@@ -127,12 +153,28 @@ ssize_t pmq_receive(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int* msg
     }
     Message* msg = deleteQcb(mqd);
     if(msg == NULL){
+        int tid;
+        if((tid = thread_self()) == -1){
+            perror("pmq_receive : thread_self error");
+            return -1;
+        }
+        Thread* pThread = pThreadTblEnt[tid].pThread;
+        DeleteThreadFromReady(pThread);
+        insertThread(mqd, pThread);
+        kill(getppid(), SIGUSR1);
 
+        printf("여기 바로 실행되면 안됨\n");
+        strcpy(msg_ptr, msg->data);
+        *msg_prio = msg->priority;
+        int sz = msg->size;
+        free(msg);
+        return sz;
     }
     else{
         strcpy(msg_ptr, msg->data);
-        msg_prio = msg->priority;
+        *msg_prio = msg->priority;
+        int sz = msg->size;
         free(msg);
-        return msg->size;
+        return sz;
     }
 }
