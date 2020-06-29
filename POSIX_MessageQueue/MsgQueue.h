@@ -38,7 +38,7 @@ typedef struct _Qcb {
 typedef struct _QcbTblEntry {
     char        name[PMQ_NANE_LEN_MAX];
 	int         mode;
-	int			openCount;
+    int         openCount;
     Qcb*        pQcb;
     BOOL        bUsed;
 } QcbTblEntry;	
