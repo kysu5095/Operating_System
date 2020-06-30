@@ -28,7 +28,7 @@ void InsertThreadToTail(Thread* pThread) {
 		pReadyQueueEnt[priority].pHead = pThread;
 		pReadyQueueEnt[priority].pHead->phPrev = NULL;
 		pReadyQueueEnt[priority].pHead->phNext = NULL;
-	}
+    }
 	else {
 		// when ready queue have only head
 		if (pReadyQueueEnt[priority].pTail == NULL) {
@@ -236,9 +236,8 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	pStack = malloc(STACK_SIZE);
 	int flags = SIGCHLD|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_VM;
 	pid_t pid = clone((void*)start_routine, (char*)pStack+STACK_SIZE, flags, arg);
-	/* stop thread immediately */
+    /* stop thread immediately */
 	kill(pid, SIGSTOP);
-
 	/* allocate TCB && init TCB */
 	Thread* pThread    = (Thread*)malloc(sizeof(Thread));
 	pThread->stackSize = STACK_SIZE;
@@ -261,7 +260,7 @@ int thread_create(thread_t *thread, thread_attr_t *attr, int priority, void *(*s
 	}
 	/* context switching */
 	if (pCurrentThread != NULL && priority < pCurrentThread->priority) {
-		pCurrentThread->status = THREAD_STATUS_READY;
+        pCurrentThread->status = THREAD_STATUS_READY;
 		InsertThreadToTail(pCurrentThread);
 		pThread->status = THREAD_STATUS_RUN;
 		kill(getppid(), SIGUSR1);
@@ -383,7 +382,7 @@ int thread_join(thread_t tid, void** retval) {
 int thread_exit(void* retval) {
 	alarm(0);
 	thread_t tid = thread_self();
-	pThreadTblEnt[tid].pThread->exitCode = *(int*)retval;
+	pThreadTblEnt[tid].pThread->exitCode = (int*)retval;
 	pThreadTblEnt[tid].pThread->status = THREAD_STATUS_ZOMBIE;
 	InsertThreadIntoWaiting(pThreadTblEnt[tid].pThread);
 	/* context switching */
