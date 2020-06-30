@@ -1,6 +1,7 @@
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
+#include <stdio.h>
 
 /* insert thread to **Tail** of ready queue */
 void InsertThreadToReady(Thread* pThread) {
@@ -121,13 +122,13 @@ int RunScheduler(void) {
 		alarm(TIMESLICE);
 	}
 	else {
-		// /* when the thread first enter the cpu */
-		// if (pCurrentThread == NULL) {
-		// 	pCurrentThread = GetThreadFromReady();
-		// 	pCurrentThread->status = THREAD_STATUS_RUN;
-		// 	kill(pCurrentThread->pid, SIGCONT);
-		// 	alarm(TIMESLICE);
-		// }
+		/* when the thread first enter the cpu */
+		if (pCurrentThread == NULL) {
+			pCurrentThread = GetThreadFromReady();
+			pCurrentThread->status = THREAD_STATUS_RUN;
+			kill(pCurrentThread->pid, SIGCONT);
+			alarm(TIMESLICE);
+		}
 		// else {
 		// 	int nPriority = (int)get_priorityFromReady();
 		// 	/* no scheduling */
@@ -148,17 +149,19 @@ int RunScheduler(void) {
 		// 		__ContextSwitch((int)pCurrentThread->pid, (int)nThread->pid);
 		// 	}
 		// }
-        /* main thread */
-        if(pCurrentThread->priority != 0){
-            /* insert cpu thread to ready queue */
-            pCurrentThread->status = THREAD_STATUS_READY;
-            InsertThreadToReady(pCurrentThread);
+        else{
+            /* main thread */
+            if(pCurrentThread->priority != 0){
+                /* insert cpu thread to ready queue */
+                pCurrentThread->status = THREAD_STATUS_READY;
+                InsertThreadToReady(pCurrentThread);
+            }
+            /* scheduling */
+            /* get new cpu thread from ready queue */
+            Thread* nThread = (Thread*)malloc(sizeof(Thread));
+            nThread = GetThreadFromReady();
+            __ContextSwitch((int)pCurrentThread->pid, (int)nThread->pid);
         }
-        /* scheduling */
-        /* get new cpu thread from ready queue */
-        Thread* nThread = (Thread*)malloc(sizeof(Thread));
-        nThread = GetThreadFromReady();
-        __ContextSwitch((int)pCurrentThread->pid, (int)nThread->pid);
 	}
 	return 0;
 }
