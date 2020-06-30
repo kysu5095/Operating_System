@@ -8,7 +8,8 @@ void* Tc4ThreadPing(void* param)
 	char msg[MAX_MSG_LEN];
 	int i;
 	int msg_prio;
-
+	int* retVal;
+	
 	mq1=pmq_open("mq2",O_CREAT,O_RDWR,NULL);
 	mq2=pmq_open("mq3",O_CREAT,O_RDWR,NULL);
 	pmq=pmq_open("mq1",O_CREAT,O_RDWR,NULL);
@@ -29,6 +30,9 @@ void* Tc4ThreadPing(void* param)
 	pmq_close(mq2);
 	pmq_close(mq1);
 	pmq_close(pmq);
+
+	retVal=(int*)param;
+	thread_exit(retVal);
 	return NULL;
 }
 
@@ -38,6 +42,7 @@ void* Tc4ThreadPong(void* param)
 	char msg[MAX_MSG_LEN];
 	int i;
 	int msg_prio;
+	int* retVal;
 
 	mq1=pmq_open("mq2",O_CREAT,O_RDWR,NULL);
 	mq2=pmq_open("mq3",O_CREAT,O_RDWR,NULL);
@@ -59,6 +64,9 @@ void* Tc4ThreadPong(void* param)
 	pmq_close(mq2);
 	pmq_close(mq1);
 	pmq_close(pmq);
+
+	retVal=(int*)param;
+	thread_exit(retVal);	
 	return NULL;
 }
 

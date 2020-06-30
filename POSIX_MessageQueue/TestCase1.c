@@ -5,6 +5,7 @@ void* Tc1ThreadSender(void* param)
 	pmqd_t mq,pmq;
 	char msg[MAX_MSG_LEN];
 	int i;
+	int* retVal;
 
 	mq=pmq_open("mq2",O_CREAT,O_RDWR,NULL);
 	pmq=pmq_open("mq1",O_CREAT,O_RDWR,NULL);
@@ -21,6 +22,9 @@ void* Tc1ThreadSender(void* param)
 
 	pmq_close(mq);
 	pmq_close(pmq);
+
+	retVal=(int*)param;
+	thread_exit(retVal);
 	return NULL;
 }
 
@@ -30,6 +34,7 @@ void* Tc1ThreadReceiver(void* param)
 	char msg[MAX_MSG_LEN];
 	int i;
 	int msg_prio;
+	int* retVal;
 
 	mq=pmq_open("mq2",O_CREAT,O_RDWR,NULL);
 	pmq=pmq_open("mq1",O_CREAT,O_RDWR,NULL);
@@ -46,6 +51,9 @@ void* Tc1ThreadReceiver(void* param)
 
 	pmq_close(mq);
 	pmq_close(pmq);
+	
+	retVal=(int*)param;
+	thread_exit(retVal);
 	return NULL;
 }
 
