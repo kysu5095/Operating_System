@@ -2,6 +2,105 @@
 #include <string.h>
 #include <stdio.h>
 
+void insertThreadToReady(Thread* pThread){
+    int priority = pThread->priority;
+	// when ready queue empty
+	if (pReadyQueueEnt[priority].pHead == NULL) {
+		pReadyQueueEnt[priority].pHead = pThread;
+		pReadyQueueEnt[priority].pHead->phPrev = NULL;
+		pReadyQueueEnt[priority].pHead->phNext = NULL;
+    }
+	else {
+		// when ready queue have only head
+		if (pReadyQueueEnt[priority].pTail == NULL) {
+			pReadyQueueEnt[priority].pTail = pThread;
+			pReadyQueueEnt[priority].pTail->phNext = NULL;
+			pReadyQueueEnt[priority].pTail->phPrev = pReadyQueueEnt[priority].pHead;
+			pReadyQueueEnt[priority].pHead->phNext = pReadyQueueEnt[priority].pTail;
+		}
+		else {
+			Thread* tmp = (Thread*)malloc(sizeof(Thread));
+			tmp->stackSize = pReadyQueueEnt[priority].pTail->stackSize;
+			tmp->stackAddr = pReadyQueueEnt[priority].pTail->stackAddr;
+			tmp->status    = pReadyQueueEnt[priority].pTail->status;
+			tmp->exitCode  = pReadyQueueEnt[priority].pTail->exitCode;
+			tmp->pid       = pReadyQueueEnt[priority].pTail->pid;
+			tmp->priority  = pReadyQueueEnt[priority].pTail->priority;
+			tmp->phPrev    = pReadyQueueEnt[priority].pTail->phPrev;
+			pReadyQueueEnt[priority].pTail->phPrev->phNext = tmp;
+			pReadyQueueEnt[priority].pTail = pThread;
+			pReadyQueueEnt[priority].pTail->phPrev = tmp;
+			pReadyQueueEnt[priority].pTail->phNext = NULL;
+			tmp->phNext = pReadyQueueEnt[priority].pTail;
+
+			/* update thread table */
+			for (thread_t id = 0; id < MAX_THREAD_NUM; id++) {
+				if (pThreadTblEnt[id].bUsed == 0) continue;
+				if (pThreadTblEnt[id].pThread->pid == tmp->pid) {
+					//free(pThreadTblEnt[id].pThread);
+					pThreadTblEnt[id].pThread = tmp;
+					break;
+				}
+			}
+		}
+	}
+	pReadyQueueEnt[priority].queueCount++;
+}
+
+void deleteThreadToReady(Thread* pThread){
+    int priority = pThread->priority;
+	Thread *tmp = (Thread*)malloc(sizeof(Thread));
+	tmp = pReadyQueueEnt[priority].pHead;
+	while (tmp != NULL) {
+		if (tmp == pThread) {
+			// When delete head
+			if (tmp == pReadyQueueEnt[priority].pHead) {
+				// When hash table size is 1
+				if (tmp->phNext == NULL) {
+					pReadyQueueEnt[priority].pHead = NULL;
+					pReadyQueueEnt[priority].pTail = NULL;
+				}
+				else {
+					// When hash table size is 2
+					if (tmp->phNext == pReadyQueueEnt[priority].pTail) {
+						pReadyQueueEnt[priority].pHead = pReadyQueueEnt[priority].pTail;
+						pReadyQueueEnt[priority].pHead->phNext = NULL;
+						pReadyQueueEnt[priority].pHead->phPrev = NULL;
+						pReadyQueueEnt[priority].pTail = NULL;
+					}
+					else {
+						pReadyQueueEnt[priority].pHead = pReadyQueueEnt[priority].pHead->phNext;
+						pReadyQueueEnt[priority].pHead->phPrev = NULL;
+					}
+				}
+			}
+			else {
+				// When delete tail
+				if (tmp == pReadyQueueEnt[priority].pTail) {
+					// When hash table size is 2
+					if (tmp->phPrev == pReadyQueueEnt[priority].pHead) {
+						pReadyQueueEnt[priority].pHead->phNext = NULL;
+						pReadyQueueEnt[priority].pTail = NULL;
+					}
+					else {
+						pReadyQueueEnt[priority].pTail = pReadyQueueEnt[priority].pTail->phPrev;
+						pReadyQueueEnt[priority].pTail->phNext = NULL;
+					}
+				}
+				else {
+					tmp->phPrev->phNext = tmp->phNext;
+					tmp->phNext->phPrev = tmp->phPrev;
+				}
+			}
+			pReadyQueueEnt[priority].queueCount--;
+			return;
+		}
+		if (tmp->phNext == NULL) break;
+		tmp = tmp->phNext;
+	}
+	return;
+}
+
 void insertQcb(pmqd_t mqd, Message* msg){
     Qcb* qcb = qcbTblEntry[mqd].pQcb;
     qcb->msgCount++;
@@ -14,8 +113,9 @@ void insertQcb(pmqd_t mqd, Message* msg){
     }
     else{
         Message* cur = qcb->pMsgHead->pNext;
-        while(cur != NULL && cur->priority >= msg->priority)
+        while(cur != qcb->pMsgTail && cur->priority >= msg->priority){
             cur = cur->pNext;
+        }
         msg->pPrev = cur->pPrev;
         msg->pNext = cur;
         cur->pPrev->pNext = msg;
@@ -57,10 +157,11 @@ void insertThread(pmqd_t mqd, Thread* pThread){
 void deleteThread(pmqd_t mqd){
     Qcb* qcb = qcbTblEntry[mqd].pQcb;
     if(qcb->waitThreadCount == 0) return;
+    qcb->waitThreadCount--;
     Thread* pThread = qcb->pWaitQHead->phNext;
     qcb->pWaitQHead->phNext = pThread->phNext;
     pThread->phNext->phPrev = qcb->pWaitQHead;
-    InsertThreadToTail(pThread);
+    insertThreadToReady(pThread);
 }
 
 pmqd_t pmq_open(const char* name, int flags, mode_t perm, pmq_attr* attr) {
@@ -115,15 +216,17 @@ int pmq_close(pmqd_t mqd) {
     }
     qcbTblEntry[mqd].openCount--;
     if(qcbTblEntry[mqd].openCount == 0){
-        strcpy(qcbTblEntry[mqd].name, "null");
-        qcbTblEntry[mqd].mode = 0;
-        qcbTblEntry[mqd].openCount = 0;
-        /////////////////////////////////////////////////
-        /* Qcb안에 있는 내용물들도 free하는 구문 추가하기 */
-        /////////////////////////////////////////////////
-        free(qcbTblEntry[mqd].pQcb);
-        qcbTblEntry[mqd].pQcb = NULL;
-        qcbTblEntry[mqd].bUsed = 0;
+        if(qcbTblEntry[mqd].pQcb->pMsgHead->pNext == qcbTblEntry[mqd].pQcb->pMsgTail){
+            strcpy(qcbTblEntry[mqd].name, "null");
+            qcbTblEntry[mqd].mode = 0;
+            qcbTblEntry[mqd].openCount = 0;
+            /////////////////////////////////////////////////
+            /* Qcb안에 있는 내용물들도 free하는 구문 추가하기 */
+            /////////////////////////////////////////////////
+            free(qcbTblEntry[mqd].pQcb);
+            qcbTblEntry[mqd].pQcb = NULL;
+            qcbTblEntry[mqd].bUsed = 0;
+        }
     }
     return 0;
 }
@@ -141,7 +244,7 @@ int pmq_send(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int msg_prio) {
     msg->pNext = NULL;
     msg->pPrev = NULL;
     insertQcb(mqd, msg);
-    deleteQcb(mqd);
+    deleteThread(mqd);
     
     return 0;
 }
@@ -151,30 +254,27 @@ ssize_t pmq_receive(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int* msg
         perror("pmq_receive : qcbTblEntry is not used");
         return -1;
     }
-    Message* msg = deleteQcb(mqd);
-    if(msg == NULL){
-        int tid;
-        if((tid = thread_self()) == -1){
-            perror("pmq_receive : thread_self error");
-            return -1;
+    while(1){
+        Message* msg = deleteQcb(mqd);
+        if(msg == NULL){
+            int tid;
+            if((tid = thread_self()) == -1){
+                perror("pmq_receive : thread_self error");
+                return -1;
+            }
+            Thread* pThread = pThreadTblEnt[tid].pThread;
+            deleteThreadToReady(pThread);
+            insertThread(mqd, pThread);
+            pCurrentThread = NULL;
+            kill(getpid(), SIGSTOP);
+		    //kill(getppid(), SIGUSR1);
         }
-        Thread* pThread = pThreadTblEnt[tid].pThread;
-        DeleteThreadFromReady(pThread);
-        insertThread(mqd, pThread);
-        kill(getppid(), SIGUSR1);
-
-        printf("여기 바로 실행되면 안됨\n");
-        strcpy(msg_ptr, msg->data);
-        *msg_prio = msg->priority;
-        int sz = msg->size;
-        free(msg);
-        return sz;
-    }
-    else{
-        strcpy(msg_ptr, msg->data);
-        *msg_prio = msg->priority;
-        int sz = msg->size;
-        free(msg);
-        return sz;
+        else{
+            strcpy(msg_ptr, msg->data);
+            *msg_prio = msg->priority;
+            int sz = msg->size;
+            free(msg);
+            return sz;
+        }
     }
 }
