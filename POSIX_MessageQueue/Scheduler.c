@@ -129,26 +129,6 @@ int RunScheduler(void) {
 			kill(pCurrentThread->pid, SIGCONT);
 			alarm(TIMESLICE);
 		}
-		// else {
-		// 	int nPriority = (int)get_priorityFromReady();
-		// 	/* no scheduling */
-		// 	if (nPriority > pCurrentThread->priority) {
-		// 		kill(pCurrentThread->pid, SIGCONT);
-		// 		alarm(TIMESLICE);
-		// 	}
-		// 	/* scheduling */
-		// 	else {
-		// 		/* insert cpu thread to ready queue */
-		// 		pCurrentThread->status = THREAD_STATUS_READY;
-		// 		InsertThreadToReady(pCurrentThread);
-
-		// 		/* get new cpu thread from ready queue */
-		// 		Thread* nThread = (Thread*)malloc(sizeof(Thread));
-		// 		nThread = GetThreadFromReady();
-				
-		// 		__ContextSwitch((int)pCurrentThread->pid, (int)nThread->pid);
-		// 	}
-		// }
         else{
             /* main thread */
             if(pCurrentThread->priority != 0){
