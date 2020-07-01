@@ -101,6 +101,36 @@ void deleteThreadToReady(Thread* pThread){
 	return;
 }
 
+Thread* GetThreadToReady() {
+	Thread* pThread = (Thread*)malloc(sizeof(Thread));
+	for (thread_t idx = 0; idx < MAX_READYQUEUE_NUM; idx++) {
+		if (pReadyQueueEnt[idx].queueCount == 0) continue;
+		pThread = pReadyQueueEnt[idx].pHead;
+		/* when ready queue size is 1 */
+		if (pThread->phNext == NULL) {
+			pReadyQueueEnt[idx].pHead = NULL;
+			pReadyQueueEnt[idx].pTail = NULL;
+		}
+		else {
+			/* when ready queue size is 2 */
+			if (pThread->phNext == pReadyQueueEnt[idx].pTail) {
+				pReadyQueueEnt[idx].pHead = pReadyQueueEnt[idx].pTail;
+				pReadyQueueEnt[idx].pHead->phNext = NULL;
+				pReadyQueueEnt[idx].pHead->phPrev = NULL;
+				pReadyQueueEnt[idx].pTail = NULL;
+			}
+			else {
+				pReadyQueueEnt[idx].pHead = pReadyQueueEnt[idx].pHead->phNext;
+				pReadyQueueEnt[idx].pHead->phPrev = NULL;
+			}
+		}
+		pReadyQueueEnt[idx].queueCount--;
+		return pThread;
+	}
+
+	return NULL;
+}
+
 void insertQcb(pmqd_t mqd, Message* msg){
     Qcb* qcb = qcbTblEntry[mqd].pQcb;
     qcb->msgCount++;
@@ -245,7 +275,6 @@ int pmq_send(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int msg_prio) {
     msg->pPrev = NULL;
     insertQcb(mqd, msg);
     deleteThread(mqd);
-    
     return 0;
 }
 
@@ -265,9 +294,10 @@ ssize_t pmq_receive(pmqd_t mqd, char* msg_ptr, size_t msg_len, unsigned int* msg
             Thread* pThread = pThreadTblEnt[tid].pThread;
             deleteThreadToReady(pThread);
             insertThread(mqd, pThread);
-            pCurrentThread = NULL;
+
+            Thread* nThread = GetThreadToReady();
+            __ContextSwitch(pThread->pid, nThread->pid);
             kill(getpid(), SIGSTOP);
-		    //kill(getppid(), SIGUSR1);
         }
         else{
             strcpy(msg_ptr, msg->data);
