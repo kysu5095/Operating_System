@@ -2,8 +2,6 @@
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 /*
  InsertThreadToTail      : ready queue�� �켱������ �´� ���̺��� thread�� 'tail'�� ����    

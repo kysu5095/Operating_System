@@ -1,7 +1,6 @@
 #include "Init.h"
 #include "Thread.h"
 #include "Scheduler.h"
-#include <stdio.h>
 
 /* insert thread to **Tail** of ready queue */
 void InsertThreadToReady(Thread* pThread) {
