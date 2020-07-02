@@ -63,16 +63,17 @@ void TestCase1(void)
 	pmqd_t mq;
 	char msg[MAX_MSG_LEN];
 	unsigned int i;
+	int tmp1=0,tmp2=1;
 
 	mq=pmq_open("mq1",O_CREAT,O_RDWR,NULL);
 
-	thread_create(&tid[0], NULL, 1, (void*)Tc1ThreadSender,0);
+	thread_create(&tid[0], NULL, 1, (void*)Tc1ThreadSender,(void*)&tmp1);
 
 	memset(msg,0,MAX_MSG_LEN);
 	pmq_receive(mq,msg,MAX_MSG_LEN,&i);
 	printf("%s\n",msg);
 
-	thread_create(&tid[1], NULL, 1, (void*)Tc1ThreadReceiver,0);
+	thread_create(&tid[1], NULL, 1, (void*)Tc1ThreadReceiver,(void*)&tmp2);
 
 	memset(msg,0,MAX_MSG_LEN);
 	pmq_receive(mq,msg,MAX_MSG_LEN,&i);
